@@ -32,6 +32,9 @@ namespace MyTasksAndNotes
             HotkeyManager hotkeyManager = new HotkeyManager(this);
 
             NotifyIconHandler notifyIconHandler = new NotifyIconHandler(this);
+
+            RichTextEditor.TaskViewWindow taskViewWindow = new RichTextEditor.TaskViewWindow();
+            taskViewWindow.Show();
         }
 
         private void MainWindow_StateChanged(object sender, EventArgs e)

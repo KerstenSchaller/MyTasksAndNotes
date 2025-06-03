@@ -1,0 +1,17 @@
+﻿<Window x:Class="RichTextEditor.TaskViewWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Rich Text Editor" Height="450" Width="800">
+    <DockPanel>
+        <ToolBar DockPanel.Dock="Top">
+            <Button Content="Insert Link" Click="InsertLink_Click"/>
+            <Button Content="Insert Image" Click="InsertImage_Click"/>
+        </ToolBar>
+
+        <RichTextBox Name="editor"
+                     AcceptsReturn="True"
+                     AcceptsTab="True"
+                     AllowDrop="True"
+                     VerticalScrollBarVisibility="Auto"/>
+    </DockPanel>
+</Window>
