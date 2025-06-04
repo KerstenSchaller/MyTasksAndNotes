@@ -12,6 +12,7 @@
                      AcceptsReturn="True"
                      AcceptsTab="True"
                      AllowDrop="True"
+                     IsDocumentEnabled="True"
                      VerticalScrollBarVisibility="Auto"/>
     </DockPanel>
 </Window>

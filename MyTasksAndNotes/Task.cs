@@ -1,7 +1,13 @@
-﻿using System;
+﻿using MyTasksAndNotes.TaskDataItem;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Formats.Asn1;
 using System.IO;
+using System.Threading.Tasks;
+using System.Xml.Linq;
 
 
 namespace MyTasksAndNotes
@@ -9,11 +15,13 @@ namespace MyTasksAndNotes
     class TaskContainer 
     {
         string path = "tasks";
+        public Task testTask;
         public TaskContainer()
         {
-            if (!Directory.Exists(path))
+            //if (!Directory.Exists(path))
             {
                 Directory.CreateDirectory(path);
+                testTask = new Task(path, "testTask");
             }
 
         }
@@ -22,43 +30,68 @@ namespace MyTasksAndNotes
     }
     class Task
     {
-        List<TaskDataItem.TaskDataItem> taskDataItems = new List<TaskDataItem.TaskDataItem>();
-        uint uid;
-        static uint numberOfTasks; 
-        public Task(string name) 
+        [JsonProperty] public List<TaskDataItem.TaskDataItem> taskDataItems = new List<TaskDataItem.TaskDataItem>();
+        [JsonProperty] uint uid;
+        [JsonProperty] string name;
+        static uint numberOfTasks;
+        string folderPath;
+        string dataFilePath;
+
+        public Task() { }
+        public Task(string baseDirectory, string _name) 
         {
-            
+            name = _name;
             uid = getUid();
-            var folderPath = name + "_" + uid;
-            // create task dir
+            folderPath = Path.Combine(baseDirectory, name + "_" + uid);
+            dataFilePath = Path.Combine(folderPath, "data.json");
+
+            
             if (!Directory.Exists(folderPath))
             {
+                // create
                 Directory.CreateDirectory(folderPath);
+                System.IO.File.Create(dataFilePath);
+            }
+            else 
+            {
+                // read existing
+                var ttask = new Task();
+                ttask = DeserializeTask();
+                taskDataItems = ttask.taskDataItems;
             }
 
         }
 
-        public void addStringItem(string item) 
+        public bool addStringItem(string item) 
         {
+            bool retval = false;
             if (IsUrl(item)) 
             {
                 taskDataItems.Add(new TaskDataItem.Link(item));
+                retval = true;
+
             }
             else
             {
                 taskDataItems.Add(new TaskDataItem.Text(item));
             }
+            SerializeTask();
+            return retval;
+
 
         }
 
-        public void addImageItem(Image item)
+        public void addImageItem(System.Drawing.Image item)
         {
-            taskDataItems.Add(new TaskDataItem.Image(item));
+            taskDataItems.Add(new TaskDataItem.Image(folderPath, item));
+            SerializeTask();
         }
 
         public void addFileItem(string item)
         {
             taskDataItems.Add(new TaskDataItem.File(item));
+            SerializeTask();
+
         }
 
         private uint getUid()
@@ -67,7 +100,7 @@ namespace MyTasksAndNotes
             return numberOfTasks;
         }
 
-        private bool IsUrl(string input)
+        public bool IsUrl(string input)
         {
             if (string.IsNullOrWhiteSpace(input))
                 return false;
@@ -81,59 +114,125 @@ namespace MyTasksAndNotes
 
             return false;
         }
+
+        void SerializeTask()
+        {
+            var settings = new JsonSerializerSettings
+            {
+                TypeNameHandling = TypeNameHandling.Auto,
+                Formatting = Formatting.Indented
+            };
+            var json = JsonConvert.SerializeObject(this, settings);
+            System.IO.File.Delete(dataFilePath);
+            System.IO.File.WriteAllText(dataFilePath, json);
+        }
+
+        // Static method: load task from file
+        Task DeserializeTask()
+        {
+
+            var settings = new JsonSerializerSettings
+            {
+                TypeNameHandling = TypeNameHandling.Auto,
+                Formatting = Formatting.Indented
+            };
+            var json = System.IO.File.ReadAllText(dataFilePath);
+            return JsonConvert.DeserializeObject<Task>(json,settings);
+        }
     }
 
 
 
-    namespace TaskDataItem {
-
-        class TaskDataItem
+    namespace TaskDataItem
+    {
+        [JsonObject(MemberSerialization.OptIn)]
+        public class TaskDataItem
         {
-            DateTime timeStamp;
-            string value;
-            public TaskDataItem()
+            //[JsonProperty] public DateTime TimeStamp { get; set; } = DateTime.Now;
+            //[JsonProperty] public string Value { get; set; }
+        }
+
+        public class Text : TaskDataItem
+        {
+            [JsonProperty] public string TextValue { get; set; }
+
+            public Text() { }
+
+            public Text(string text)
             {
+                TextValue = text;
             }
         }
 
-        class Text : TaskDataItem
+        public class Image : TaskDataItem
         {
-            string text;
-            public Text(string _text)
+            [JsonProperty] public string Path { get; set; }
+           
+
+            public Image() { }
+
+            public Image(string basePath, System.Drawing.Image image)
             {
-                text = _text;
+                string folder = "images";
+                Directory.CreateDirectory(System.IO.Path.Combine(basePath, folder));
+
+                string fileName = $"image_{Guid.NewGuid()}.png";
+                Path = System.IO.Path.Combine(basePath, folder, fileName);
+                image.Save(Path);
             }
         }
 
-        class Image : TaskDataItem
+        public class File : TaskDataItem
         {
-            string path;
-            public Image(System.Drawing.Image image)
+            [JsonProperty] public string Path { get; set; }
+
+            public File() { }
+
+            public File(string path)
             {
-                // save image and store path
+                Path = path;
+                //Path = "";
             }
         }
 
-        class File : TaskDataItem
+        public class Link : TaskDataItem
         {
-            string path;
-            public File(string _path)
+            [JsonProperty] public string Url { get; set; }
+
+            public Link() { }
+
+            public Link(string url)
             {
-                path = _path;
+                Url = url;
             }
         }
 
-        class Link : TaskDataItem
+        public class TaskDataItemConverter : JsonConverter
         {
-            string url;
-            public Link(string _url)
+            public override bool CanConvert(Type objectType) => objectType == typeof(TaskDataItem);
+
+            public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
             {
-                url = _url;
+                JObject jo = JObject.Load(reader);
+                var type = jo["$type"]?.ToString();
+
+                if (type == null)
+                    throw new JsonSerializationException("Missing $type for polymorphic deserialization.");
+
+                Type targetType = Type.GetType(type);
+                if (targetType == null)
+                    throw new JsonSerializationException($"Unknown type: {type}");
+
+                return jo.ToObject(targetType, serializer);
+            }
+
+            public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
+            {
+                JObject jo = JObject.FromObject(value, serializer);
+                jo.AddFirst(new JProperty("$type", value.GetType().AssemblyQualifiedName));
+                jo.WriteTo(writer);
             }
         }
-
-
-
 
     }
 }
