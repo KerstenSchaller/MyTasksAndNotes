@@ -63,15 +63,14 @@ namespace MyTasksAndNotes
             }
         }
 
-        private void addText(string text)
+        private void addText(string text, int? tag = null )
         {
             Paragraph newParagraph = new Paragraph(new Run(text));
-            var currentParagraph = editor.CaretPosition.Paragraph;
+            newParagraph.Tag = tag;
             editor.Document.Blocks.Add(newParagraph);
 
             editor.CaretPosition = newParagraph.ContentEnd;
-            editor.CaretPosition.InsertLineBreak();
-            taskViewWindow.update();
+            //editor.CaretPosition.InsertLineBreak();
         }
 
         public void addTextToTask(string text) 
@@ -86,7 +85,7 @@ namespace MyTasksAndNotes
         }
 
 
-        private void addLink(string url)
+        private void addLink(string url, int? tag = null)
         {
             var hyperlink = new Hyperlink(new Run(url))
             {
@@ -98,14 +97,13 @@ namespace MyTasksAndNotes
                 ev.Handled = true;
             };
             editor.CaretPosition.Paragraph?.Inlines.Add(hyperlink);
-            editor.CaretPosition = editor.CaretPosition.DocumentEnd;
-            editor.CaretPosition.InsertLineBreak();
-            taskViewWindow.update();
+            //editor.CaretPosition = editor.CaretPosition.DocumentEnd;
+            //editor.CaretPosition.InsertLineBreak();
         }
 
         public void InsertNewImage(string filePath) 
         {
-            InsertImage(filePath);
+            //InsertImage(filePath);
             task.addImageItem(InsertImage(filePath));
         }
         private System.Drawing.Image InsertImage(string filePath)
@@ -135,9 +133,8 @@ namespace MyTasksAndNotes
 
             editor.CaretPosition.InsertTextInRun(" ");
             editor.CaretPosition.Paragraph?.Inlines.Add(new InlineUIContainer(image));
-            editor.CaretPosition = editor.CaretPosition.DocumentEnd;
-            editor.CaretPosition.InsertLineBreak();
-            taskViewWindow.update();
+            //editor.CaretPosition = editor.CaretPosition.DocumentEnd;
+            //editor.CaretPosition.InsertLineBreak();
 
             return image.toSystemDrawing();
         }
@@ -148,14 +145,14 @@ namespace MyTasksAndNotes
             return ext == ".jpg" || ext == ".jpeg" || ext == ".png" || ext == ".bmp" || ext == ".gif";
         }
 
-        public void ProcessTaskDataItems(System.Collections.Generic.List<TaskDataItem.TaskDataItem> items)
+        public void ProcessTaskDataItems(System.Collections.Generic.Dictionary<int,TaskDataItem.TaskDataItem> items)
         {
             foreach (var item in items)
             {
-                switch (item)
+                switch (item.Value)
                 {
                     case MyTasksAndNotes.TaskDataItem.Text textItem:
-                        addText(textItem.TextValue);
+                        addText(textItem.TextValue, item.Key);
                         break;
                     case MyTasksAndNotes.TaskDataItem.Image imageItem:
                         InsertImage(imageItem.Path);
@@ -164,7 +161,7 @@ namespace MyTasksAndNotes
                         //HandleFile(fileItem);
                         break;
                     case MyTasksAndNotes.TaskDataItem.Link linkItem:
-                        addLink(linkItem.Url);
+                        addLink(linkItem.Url, item.Key);
                         break;
                     default:
                         break;
@@ -172,6 +169,12 @@ namespace MyTasksAndNotes
             }
         }
 
+        internal void updateText(int tag, string text)
+        {
+            var item = (TaskDataItem.Text)task.taskDataItems[tag];
+            item.TextValue = text;
+            task.SerializeTask();
 
+        }
     }
 }

@@ -30,7 +30,8 @@ namespace MyTasksAndNotes
     }
     class Task
     {
-        [JsonProperty] public List<TaskDataItem.TaskDataItem> taskDataItems = new List<TaskDataItem.TaskDataItem>();
+        //[JsonProperty] public List<TaskDataItem.TaskDataItem> taskDataItems = new List<TaskDataItem.TaskDataItem>();
+        [JsonProperty] public Dictionary<int,TaskDataItem.TaskDataItem> taskDataItems = new Dictionary<int,TaskDataItem.TaskDataItem>();
         [JsonProperty] uint uid;
         [JsonProperty] string name;
         static uint numberOfTasks;
@@ -67,13 +68,13 @@ namespace MyTasksAndNotes
             bool retval = false;
             if (IsUrl(item)) 
             {
-                taskDataItems.Add(new TaskDataItem.Link(item));
+                taskDataItems.Add(taskDataItems.Count, new TaskDataItem.Link(item));
                 retval = true;
 
             }
             else
             {
-                taskDataItems.Add(new TaskDataItem.Text(item));
+                taskDataItems.Add(taskDataItems.Count, new TaskDataItem.Text(item));
             }
             SerializeTask();
             return retval;
@@ -83,13 +84,13 @@ namespace MyTasksAndNotes
 
         public void addImageItem(System.Drawing.Image item)
         {
-            taskDataItems.Add(new TaskDataItem.Image(folderPath, item));
+            taskDataItems.Add(taskDataItems.Count, new TaskDataItem.Image(folderPath, item));
             SerializeTask();
         }
 
         public void addFileItem(string item)
         {
-            taskDataItems.Add(new TaskDataItem.File(item));
+            taskDataItems.Add(taskDataItems.Count, new TaskDataItem.File(item));
             SerializeTask();
 
         }
@@ -115,7 +116,7 @@ namespace MyTasksAndNotes
             return false;
         }
 
-        void SerializeTask()
+        public void SerializeTask()
         {
             var settings = new JsonSerializerSettings
             {
@@ -128,7 +129,7 @@ namespace MyTasksAndNotes
         }
 
         // Static method: load task from file
-        Task DeserializeTask()
+        public Task DeserializeTask()
         {
 
             var settings = new JsonSerializerSettings

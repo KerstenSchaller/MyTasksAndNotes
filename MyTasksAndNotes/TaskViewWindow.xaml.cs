@@ -18,6 +18,8 @@ using MyTasksAndNotes;
 using System.Diagnostics;
 using System.Windows.Forms;
 using System.ComponentModel;
+using System.Drawing;
+using Image = System.Windows.Controls.Image;
 
 namespace RichTextEditor
 {
@@ -26,13 +28,14 @@ namespace RichTextEditor
 
         private DispatcherTimer _typingTimer;
         private TimeSpan _typingDelay = TimeSpan.FromSeconds(5);
-        TextPointer typingStartPointer = null;
 
         TaskViewWindowController taskViewWindowController;
 
         private bool suppressTextChanged = false;
 
         private string typedText = "";
+
+        Paragraph currentParagraph;
 
         public TaskViewWindow()
         {
@@ -45,34 +48,30 @@ namespace RichTextEditor
             SpellCheck.SetIsEnabled(editor, false);
 
 
-            // timer used for autosaving
-            _typingTimer = new DispatcherTimer
-            {
-                Interval = _typingDelay
-            };
-            _typingTimer.Tick += TypingTimer_Tick;
-            _typingTimer.Start();
 
 
-            // handle text change in editor
-            // editor.AddHandler(RichTextBox.TextChangedEvent, new TextChangedEventHandler(RichTextBox_TextChanged));
 
             taskViewWindowController = new TaskViewWindowController(editor, this);
 
             this.StateChanged += Window_StateChanged;
             this.Closing += MainWindow_Closing;
 
+            editor.SelectionChanged += Editor_SelectionChanged;
+
+            currentParagraph = GetCurrentParagraph();
+
         }
 
-        public void update() 
-        {
-            typingStartPointer = editor.CaretPosition;
-        }
 
         private void saveTypedText() 
         {
-            taskViewWindowController.addTextToTask(typedText);
-            typedText = "";
+            var para =  GetCurrentParagraph();
+            string text = new TextRange(para.ContentStart, para.ContentEnd).Text;
+            if (text == "") return;
+            taskViewWindowController.addTextToTask(text);
+            GetCurrentParagraph().Inlines.Add(new LineBreak());
+            editor.Document.Blocks.Add(new Paragraph());
+            
 
         }
 
@@ -80,10 +79,10 @@ namespace RichTextEditor
         // used to capture ctrl + v events where the clipboard content is a file
         private void Editor_PreviewKeyDown(object sender, KeyEventArgs e)
         {
-            saveTypedText();
             suppressTextChanged = true;
             if (e.Key == Key.V && (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control)
             {
+                saveTypedText();
                 if (Clipboard.ContainsFileDropList())
                 {
                     var fileList = Clipboard.GetFileDropList();
@@ -129,6 +128,15 @@ namespace RichTextEditor
             editor.CaretPosition.InsertTextInRun(" ");
             editor.CaretPosition.Paragraph?.Inlines.Add(hyperlink);
             suppressTextChanged = false;
+        }
+
+        TextRange selectedRange = null;
+        private void HighlightSelectedText(RichTextBox richTextBox)
+        {
+            if(selectedRange != null) selectedRange.ApplyPropertyValue(TextElement.BackgroundProperty, System.Windows.Media.Brushes.White);
+            var para = richTextBox.CaretPosition.Paragraph;
+            selectedRange = new TextRange(para.ContentStart, para.ContentEnd);
+            selectedRange.ApplyPropertyValue(TextElement.BackgroundProperty, System.Windows.Media.Brushes.LightGray);
         }
 
         private void InsertImage_Click(object sender, RoutedEventArgs e)
@@ -187,7 +195,8 @@ namespace RichTextEditor
                 }
             }
 
-            taskViewWindowController.addNewText(Clipboard.GetText());
+            var text = Clipboard.GetText();
+            taskViewWindowController.addNewText(text);
             e.CancelCommand(); // Prevent default paste
             return;
 
@@ -197,27 +206,48 @@ namespace RichTextEditor
 
 
 
-
-
-
-
-        private void TypingTimer_Tick(object sender, EventArgs e)
+        Block currentBlock;
+        private Paragraph GetCurrentParagraph()
         {
-            // Timer done — collect text since typingStartPointer
-            _typingTimer.Stop();
-
-            if (typingStartPointer != null)
-            {
-                string newText = new TextRange(typingStartPointer, editor.Document.ContentEnd).Text;
-                typedText = newText;
-
-                var para = editor.CaretPosition.Paragraph;
-                string text = new TextRange(para.ContentStart, para.ContentEnd).Text;
-                MessageBox.Show(text);
-
-            }
-            _typingTimer.Start();
+            TextPointer caret = editor.CaretPosition;
+            return caret.Paragraph;
         }
+        private Block GetCurrentBlock()
+        {
+            TextPointer caret = editor.CaretPosition;
+            return caret.Paragraph ?? caret.Parent as Block;
+        }
+
+        private void Editor_SelectionChanged(object sender, RoutedEventArgs e)
+        {
+            Block newBlock = GetCurrentBlock();
+
+            if (newBlock != null && newBlock != currentBlock)
+            {
+                currentBlock = newBlock;
+
+
+                var para = currentParagraph;
+                string text = new TextRange(para.ContentStart, para.ContentEnd).Text;
+                if (text == "") return;
+                if(para.Tag != null)
+                {
+                    taskViewWindowController.updateText((int)para.Tag, text);
+                }
+                else
+                {
+                    taskViewWindowController.addTextToTask(text);
+                }
+                HighlightSelectedText(editor);
+                currentParagraph = GetCurrentParagraph();
+
+                MessageBox.Show(text);
+            }
+        }
+
+
+
+
 
         private void Window_StateChanged(object sender, EventArgs e)
         {
