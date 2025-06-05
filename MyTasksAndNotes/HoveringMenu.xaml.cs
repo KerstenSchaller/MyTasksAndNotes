@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 using System.Windows;
 using System.Windows.Controls;
@@ -14,13 +15,11 @@ namespace MyTasksAndNotes
     struct MenuItem
     {
         public Point relativePos;
-        public bool active = false;
-        public bool wasActive = false;
         public string text = "";
-        public Dictionary<Point, MenuItem> childMenuItems;
-        public MenuItem(Point _relativePos ,string _text) 
+        public Action callback;
+        public MenuItem(Point _relativePos ,string _text, Action _callback) 
         {
-            childMenuItems = new Dictionary<Point, MenuItem>();
+            callback = _callback;
             text = _text;
             relativePos = _relativePos;
         }
@@ -66,17 +65,17 @@ namespace MyTasksAndNotes
 
             var mainMenuItems = menuItems;
 
-            var titleItem = new MenuItem(Center,"MyTasksAndNotes");
-            var mainItem = new MenuItem(Up,"Main"); // Up
-            var newTaskItem = new MenuItem(Down,"New Task"); // Down
-            var xxxItem = new MenuItem(Left,"XXX"); // Left 
-            var yyyItem = new MenuItem(Right,"YYY"); // Right
+            var mainItem = new MenuItem(Center,"MyTasksAndNotes", null);
+            var newTaskItem = new MenuItem(Up,"New Task", null); // Up
+            var editTaskItem = new MenuItem(Down,"Edit last task", null); // Down
+            var newNoteItem = new MenuItem(Left,"New Note", null); // Left 
+            var editNoteItem = new MenuItem(Right,"Edit last Note", null); // Right
 
-            menuItems.Add(Center,titleItem);
-            addMenuRelativeItems(titleItem, mainItem);
-            addMenuRelativeItems(titleItem, newTaskItem);
-            addMenuRelativeItems(titleItem, xxxItem);
-            addMenuRelativeItems(titleItem, yyyItem);
+            menuItems.Add(Center, mainItem);
+            addMenuRelativeItems(mainItem, newTaskItem);
+            addMenuRelativeItems(mainItem, editTaskItem);
+            addMenuRelativeItems(mainItem, newNoteItem);
+            addMenuRelativeItems(mainItem, editNoteItem);
         }
 
         void addMenuRelativeItems(MenuItem root, MenuItem child) 
@@ -114,6 +113,8 @@ namespace MyTasksAndNotes
                             {
                                 Background = Brushes.Orange,
                                 Margin = new Thickness(5),
+                                HorizontalAlignment = HorizontalAlignment.Center,
+                                VerticalAlignment = VerticalAlignment.Center,
                                 Width = 100,
                                 Height = 100
                             };
@@ -124,6 +125,8 @@ namespace MyTasksAndNotes
                             {
                                 Visibility = (item.text == "") ? Visibility.Hidden : Visibility.Visible,
                                 Background = (item.text != "") ? Brushes.Gray : Brushes.White,
+                                HorizontalAlignment = HorizontalAlignment.Center,
+                                VerticalAlignment = VerticalAlignment.Center,
                                 Margin = new Thickness(5),
                                 Width = 100,
                                 Height = 100
@@ -181,8 +184,17 @@ namespace MyTasksAndNotes
             ShiftCells(dx: 0, dy: -1);
         }
 
+
+        Point currentShift = new Point();
         private void ShiftCells(int dx, int dy)
         {
+            if (Math.Abs(currentShift.X + dx) > 1 || Math.Abs(currentShift.Y + dy) > 1) 
+            {
+                // Dont shift further than allowed
+                return;
+            }
+            currentShift = new Point(currentShift.X + dx, currentShift.Y + dy);
+
             var newMenuItems = new Dictionary<Point, MenuItem>();
 
             foreach (var kvp in menuItems)
