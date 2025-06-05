@@ -103,6 +103,7 @@ namespace MyTasksAndNotes
 
         public void notifySubscribers(int hotkeyId) 
         {
+            
             var subscribers = actions[hotkeyId];
             foreach(var callback in subscribers) 
             {
@@ -119,8 +120,16 @@ namespace MyTasksAndNotes
 
             if (msg == WM_HOTKEY)
             {
-                notifySubscribers(wParam.ToInt32());
-                handled = true;
+                var hotkeyId = wParam.ToInt32();
+                if (actions.ContainsKey(hotkeyId)) 
+                {
+                    notifySubscribers(hotkeyId);
+                    handled = true;
+                }
+                else
+                {
+                    handled = false;
+                }
 
             }
             else if (msg == WM_SYSCOMMAND)

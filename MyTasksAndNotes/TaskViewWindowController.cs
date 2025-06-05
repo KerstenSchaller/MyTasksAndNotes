@@ -166,6 +166,8 @@ namespace MyTasksAndNotes
                     default:
                         break;
                 }
+                addText(taskViewWindow.DelimeterLine);
+                editor.Document.Blocks.Add(new Paragraph());
             }
         }
 

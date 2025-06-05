@@ -18,6 +18,8 @@ namespace MyTasksAndNotes
             InitializeComponent();
 
 
+
+
             this.StateChanged += MainWindow_StateChanged;
             WindowState = WindowState.Minimized;
 

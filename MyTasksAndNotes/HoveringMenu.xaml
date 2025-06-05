@@ -1,0 +1,26 @@
+﻿<Window x:Class="MyTasksAndNotes.HoveringMenu"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Radial Menu" Width="800" Height="800"
+
+        Focusable="True"
+        WindowStartupLocation="CenterScreen"
+        PreviewKeyUp="Window_KeyUp"
+        >
+    <Grid>
+        <!-- Backdrop Blur -->
+        <Rectangle Fill="#AA000000">
+            <Rectangle.Effect>
+                <BlurEffect Radius="10"/>
+            </Rectangle.Effect>
+        </Rectangle>
+
+        <!-- Grid for Radial Menu -->
+        <UniformGrid Name="RadialGrid"
+                     Rows="5" Columns="5"
+                     HorizontalAlignment="Center"
+                     VerticalAlignment="Center"
+                     Width="600" Height="600">
+        </UniformGrid>
+    </Grid>
+</Window>

@@ -37,6 +37,8 @@ namespace RichTextEditor
 
         Paragraph currentParagraph;
 
+        public string DelimeterLine = "######################################################\n";
+
         public TaskViewWindow()
         {
             InitializeComponent();
@@ -67,7 +69,7 @@ namespace RichTextEditor
         {
             var para =  GetCurrentParagraph();
             string text = new TextRange(para.ContentStart, para.ContentEnd).Text;
-            if (text == "") return;
+            if (text == "" || text.Contains("\n") || text == DelimeterLine) return;
             taskViewWindowController.addTextToTask(text);
             GetCurrentParagraph().Inlines.Add(new LineBreak());
             editor.Document.Blocks.Add(new Paragraph());

@@ -6,17 +6,23 @@ using System.Windows.Media;
 using System.Resources;
 using MyTasksAndNotes.Properties;
 using MyTasksAndNotes;
+using System.Runtime.InteropServices;
+using System.Windows.Threading;
+using System.Windows.Input;
+using MouseEventArgs = System.Windows.Forms.MouseEventArgs;
 
 public class NotifyIconHandler
 {
     private NotifyIcon _notifyIcon;
     private bool _isExit;
     Window mainWindow;
+    HoveringMenu hoveringMenu;
 
     public NotifyIconHandler(Window _mainWindow)
     {
 
         mainWindow = _mainWindow;
+        
 
         _notifyIcon = new NotifyIcon();
         _notifyIcon.Icon = Resources.MyIcon;
@@ -24,7 +30,7 @@ public class NotifyIconHandler
         _notifyIcon.Visible = true;
         _notifyIcon.Text = "MyTasksAndNotes";
 
-        HotkeyManager.getInstance().subscribeHotkey(ShowMainWindow, HotKeyIds.MENU_UP);
+        HotkeyManager.getInstance().subscribeHotkey(ShowHoveringMenu, HotKeyIds.MENU_UP);
 
 
 
@@ -56,6 +62,35 @@ public class NotifyIconHandler
         mainWindow.Show();
         mainWindow.WindowState = WindowState.Normal;
         mainWindow.Activate();
+    }
+
+    bool hoveringMenuActive = false;
+    private void ShowHoveringMenu()
+    {
+        // just execute when menu is not already active
+        if (hoveringMenuActive == false)
+        {
+            Dispatcher dispatcher = Dispatcher.CurrentDispatcher;
+            dispatcher.BeginInvoke(new Action(() =>
+            {
+
+                hoveringMenu = null;
+                hoveringMenu = new HoveringMenu();
+                hoveringMenu.Focus();
+                Keyboard.Focus(hoveringMenu);
+
+                hoveringMenuActive = true;
+                hoveringMenu.Show();
+                hoveringMenu.WindowState = WindowState.Normal;
+                hoveringMenu.Activate();
+                hoveringMenu.Closing += (sender, e) =>
+                {
+                    hoveringMenuActive = false;
+                };
+            }));
+
+
+        }
 
     }
 }
