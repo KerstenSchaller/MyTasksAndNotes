@@ -31,13 +31,19 @@ namespace MyTasksAndNotes
     public partial class HoveringMenu : Window
     {
         private int gridSize = 5;
-        private int centerIndex;
         private List<string> cellData;
 
         Dictionary<Point, MenuItem> menuItems = new Dictionary<Point, MenuItem>();
+        MenuItem currentMenuItem;
+        Window mainWindow;
 
-        public HoveringMenu()
+        Point centerIndex;
+
+        public HoveringMenu(Window _mainWindow)
         {
+            centerIndex = new Point((int)(gridSize / 2), (int)(gridSize / 2));
+
+            mainWindow = _mainWindow;
             InitializeComponent();
             this.Activate();
             this.Focusable = true;
@@ -50,9 +56,20 @@ namespace MyTasksAndNotes
             HotkeyManager.getInstance().subscribeHotkey(MoveDown, HotKeyIds.MENU_DOWN);
             HotkeyManager.getInstance().subscribeHotkey(MoveLeft, HotKeyIds.MENU_LEFT);
             HotkeyManager.getInstance().subscribeHotkey(MoveRight, HotKeyIds.MENU_RIGHT);
+            HotkeyManager.getInstance().subscribeHotkey(MenuEnter, HotKeyIds.MENU_ENTER);
+
 
             setupMenu();
             RenderGrid();
+        }
+
+        void MenuEnter() 
+        {
+            if(currentMenuItem.callback != null) 
+            {
+                currentMenuItem.callback();
+                this.Close();
+            }
         }
 
         void setupMenu() 
@@ -65,7 +82,8 @@ namespace MyTasksAndNotes
 
             var mainMenuItems = menuItems;
 
-            var mainItem = new MenuItem(Center,"MyTasksAndNotes", null);
+            var mainItem = new MenuItem(Center,"MyTasksAndNotes", showMainWindow);
+            currentMenuItem = mainItem;
             var newTaskItem = new MenuItem(Up,"New Task", null); // Up
             var editTaskItem = new MenuItem(Down,"Edit last task", null); // Down
             var newNoteItem = new MenuItem(Left,"New Note", null); // Left 
@@ -77,6 +95,14 @@ namespace MyTasksAndNotes
             addMenuRelativeItems(mainItem, newNoteItem);
             addMenuRelativeItems(mainItem, editNoteItem);
         }
+
+        void showMainWindow() 
+        {
+            mainWindow.Show();
+            mainWindow.WindowState = WindowState.Normal;
+            mainWindow.Activate();
+        }
+
 
         void addMenuRelativeItems(MenuItem root, MenuItem child) 
         {
@@ -96,7 +122,7 @@ namespace MyTasksAndNotes
         private void RenderGrid()
         {
             RadialGrid.Children.Clear();
-            Point centerIndex = new Point((int)(gridSize / 2), (int)(gridSize / 2));
+            
             StackPanel panel = new StackPanel();
             for (int y = 0; y < gridSize; y++)
             {
@@ -109,6 +135,7 @@ namespace MyTasksAndNotes
                     
                         if (new Point(x,y) == centerIndex)
                         {
+                            currentMenuItem = item;
                             panel = new StackPanel
                             {
                                 Background = Brushes.Orange,
@@ -188,11 +215,6 @@ namespace MyTasksAndNotes
         Point currentShift = new Point();
         private void ShiftCells(int dx, int dy)
         {
-            if (Math.Abs(currentShift.X + dx) > 1 || Math.Abs(currentShift.Y + dy) > 1) 
-            {
-                // Dont shift further than allowed
-                return;
-            }
             currentShift = new Point(currentShift.X + dx, currentShift.Y + dy);
 
             var newMenuItems = new Dictionary<Point, MenuItem>();
@@ -207,6 +229,11 @@ namespace MyTasksAndNotes
 
                 var newPoint = new Point(newX, newY);
                 newMenuItems[newPoint] = item;
+            }
+            if (newMenuItems.ContainsKey(centerIndex) == false) 
+            {
+                //shift not allowed, center piece does not contain a valid item
+                return;
             }
 
             menuItems = newMenuItems;

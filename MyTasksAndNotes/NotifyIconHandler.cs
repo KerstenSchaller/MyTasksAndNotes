@@ -75,7 +75,7 @@ public class NotifyIconHandler
             {
 
                 hoveringMenu = null;
-                hoveringMenu = new HoveringMenu();
+                hoveringMenu = new HoveringMenu(mainWindow);
                 hoveringMenu.Focus();
                 Keyboard.Focus(hoveringMenu);
 

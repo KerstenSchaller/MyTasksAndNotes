@@ -73,6 +73,7 @@ namespace MyTasksAndNotes
                 failed = !RegisterHotKey(hWnd, HotKeyIds.MENU_DOWN, VirtualKeys.MOD_CONTROL | VirtualKeys.MOD_ALT, VirtualKeys.DOWN);
                 failed = !RegisterHotKey(hWnd, HotKeyIds.MENU_LEFT, VirtualKeys.MOD_CONTROL | VirtualKeys.MOD_ALT, VirtualKeys.LEFT);
                 failed = !RegisterHotKey(hWnd, HotKeyIds.MENU_RIGHT, VirtualKeys.MOD_CONTROL | VirtualKeys.MOD_ALT, VirtualKeys.RIGHT);
+                failed = !RegisterHotKey(hWnd, HotKeyIds.MENU_ENTER, VirtualKeys.MOD_CONTROL | VirtualKeys.MOD_ALT, VirtualKeys.RETURN);
                 if (failed)
                 {
                     MessageBox.Show("Failed to register hotkey.");
@@ -151,6 +152,7 @@ namespace MyTasksAndNotes
         public const int MENU_RIGHT = 90001;
         public const int MENU_UP = 90002;
         public const int MENU_DOWN = 90003;
+        public const int MENU_ENTER = 9000;
     }
 
     public static class VirtualKeys

@@ -13,13 +13,11 @@ namespace MyTasksAndNotes
         private Window _topWindow;
 
 
+
+
         public MainWindow()
         {
             InitializeComponent();
-
-
-
-
             this.StateChanged += MainWindow_StateChanged;
             WindowState = WindowState.Minimized;
 
