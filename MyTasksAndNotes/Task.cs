@@ -12,6 +12,7 @@ namespace MyTasksAndNotes
     class NoteContainer
     {
         string path = "Notes";
+        string globalPath = "";
         string baseName = "testNote";
         List<Note> notes = new List<Note>();
         int highestIndex;
@@ -24,14 +25,12 @@ namespace MyTasksAndNotes
 
         private NoteContainer()
         {
-            //if (!Directory.Exists(path))
-            {
-                Directory.CreateDirectory(path);
+            var gPath = App.GlobalOptions.NoteStoragePath;
+            globalPath = path;
+            if(gPath != "") globalPath = Path.Combine(gPath, path);
+            Directory.CreateDirectory(globalPath);
                 
-            }
-            highestIndex = ProcessSubfolders(path, baseName);
-
-
+            highestIndex = ProcessSubfolders(globalPath, baseName);
         }
 
         public int ProcessSubfolders(string rootFolder, string prefix)
@@ -70,15 +69,18 @@ namespace MyTasksAndNotes
         Note addNote(string rootFolder, string name, int uid)
         {
             Note note = new Note(rootFolder, name, uid);
+
             notes.Add(note);
             return note;
         }
         public Note addNewNote() 
         {
             highestIndex++;
-            Note note = new Note(path, baseName, highestIndex);
-            notes.Add(note);
-            return note;
+            //Note note = new Note(globalPath, baseName, highestIndex);
+            //notes.Add(note);
+            Task task = new Task(globalPath, baseName, highestIndex);
+            notes.Add(task);
+            return task;
         }
 
         public Note getLastNote()
@@ -110,7 +112,6 @@ namespace MyTasksAndNotes
                 {
                     // create
                     Directory.CreateDirectory(folderPath);
-                    System.IO.File.Create(dataFilePath);
                 }
                 else
                 {
@@ -200,6 +201,15 @@ namespace MyTasksAndNotes
                 return JsonConvert.DeserializeObject<Note>(json, settings);
             }
         }
+
+    public class Task : Note
+    {
+        [JsonProperty] const bool isTask = true;
+        [JsonProperty] string testValue = "blabla";
+
+        public Task(string baseDirectory, string _name, int _uid) : base(baseDirectory, _name, _uid) { }
+
+    }
 
 
 
@@ -292,7 +302,12 @@ namespace MyTasksAndNotes
                 jo.AddFirst(new JProperty("$type", value.GetType().AssemblyQualifiedName));
                 jo.WriteTo(writer);
             }
+
+
+
         }
+
+
 
     }
 }

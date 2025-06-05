@@ -14,7 +14,7 @@ namespace MyTasksAndNotes
         private Window _topWindow;
 
 
-
+        
 
         public MainWindow()
         {
@@ -34,7 +34,8 @@ namespace MyTasksAndNotes
 
             NotifyIconHandler notifyIconHandler = new NotifyIconHandler(this);
 
-
+            OptionsWindow optionsWindow = new OptionsWindow();
+            optionsWindow.Show();
 
             this.Closing += MainWindow_Closing;
         }

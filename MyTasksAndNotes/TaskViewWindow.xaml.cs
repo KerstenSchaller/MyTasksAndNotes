@@ -244,7 +244,6 @@ namespace RichTextEditor
                 HighlightSelectedText(editor);
                 currentParagraph = GetCurrentParagraph();
 
-                MessageBox.Show(text);
             }
         }
 
