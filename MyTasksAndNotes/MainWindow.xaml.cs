@@ -21,14 +21,13 @@ namespace MyTasksAndNotes
             InitializeComponent();
             this.StateChanged += MainWindow_StateChanged;
             WindowState = WindowState.Minimized;
-
+            populate();
             Show();
             Activate();
             WindowState = WindowState.Minimized;
             Hide();
 
-            AddCard(ToDoPanel, "Sample Task 1");
-            AddCard(InProgressPanel, "Fix Bug 42");
+
 
             HotkeyManager hotkeyManager = new HotkeyManager(this);
 
@@ -36,8 +35,29 @@ namespace MyTasksAndNotes
 
             OptionsWindow optionsWindow = new OptionsWindow();
             optionsWindow.Show();
+            
 
             this.Closing += MainWindow_Closing;
+        }
+
+        void populate() 
+        {
+            clearCards(ToDoPanel);
+            clearCards(DonePanel);
+            var tasks = NoteContainer.Instance.getTasks();
+            foreach (var task in tasks) 
+            {
+                switch (task.taskState) 
+                {
+                    case TaskState.Todo:
+                        AddCard(ToDoPanel, task.name);
+                        break;
+                    case TaskState.Done:
+                        AddCard(DonePanel, task.name);
+                        break;
+                }
+                
+            }
         }
 
         private void MainWindow_Closing(object sender, CancelEventArgs e)
@@ -55,6 +75,12 @@ namespace MyTasksAndNotes
             {
                 Hide();
             }
+            if (this.WindowState == WindowState.Maximized || this.WindowState == WindowState.Normal)
+            {
+                populate();
+            }
+
+            
         }
 
         private void AddCard(StackPanel column, string text)
@@ -63,13 +89,28 @@ namespace MyTasksAndNotes
             {
                 Content = text,
                 Margin = new Thickness(5),
-                Tag = text
+                Tag = text,
+                VerticalContentAlignment = VerticalAlignment.Stretch 
             };
-
+            
+            var textBlock = new TextBlock
+            {
+                Text = text,
+                TextWrapping = TextWrapping.Wrap,
+                TextAlignment = TextAlignment.Center
+            };
+            
+            card.Content = textBlock;
+            
             card.PreviewMouseMove += Card_PreviewMouseMove;
 
 
             column.Children.Add(card);
+        }
+
+        void clearCards(StackPanel column) 
+        {
+            column.Children.Clear();
         }
 
 
@@ -98,7 +139,6 @@ namespace MyTasksAndNotes
                 // Clone visual for drag preview
                 var floatCopy = new Button
                 {
-                    Content = btn.Content,
                     Width = btn.ActualWidth,
                     Height = btn.ActualHeight,
                     Opacity = 0.75,
@@ -108,6 +148,31 @@ namespace MyTasksAndNotes
                     Padding = btn.Padding,
                     Margin = new Thickness(0)
                 };
+
+                // textblock copy logic because assignment of content would change parent of content (unexpected behaviour)
+                if (btn.Content is TextBlock original)
+                {
+                    floatCopy.Content = new TextBlock
+                    {
+                        Text = original.Text,
+                        TextWrapping = original.TextWrapping,
+                        TextAlignment = original.TextAlignment,
+                        FontSize = original.FontSize,
+                        FontFamily = original.FontFamily,
+                        FontWeight = original.FontWeight,
+                        Foreground = original.Foreground,
+                        Background = original.Background,
+                        Padding = original.Padding,
+                        Margin = original.Margin,
+                        HorizontalAlignment = original.HorizontalAlignment,
+                        VerticalAlignment = original.VerticalAlignment,
+                        TextTrimming = original.TextTrimming
+                    };
+                }
+                else
+                {
+                    floatCopy.Content = btn.Content; // fallback
+                }
 
                 _dragAdorner = new DragAdorner(RootGrid, floatCopy);
                 _adornerLayer.Add(_dragAdorner);

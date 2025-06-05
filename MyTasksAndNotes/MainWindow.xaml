@@ -6,17 +6,10 @@
         
         <ScrollViewer HorizontalScrollBarVisibility="Auto">
             <StackPanel Orientation="Horizontal" Margin="10">
-                <StackPanel x:Name="newPanel" Width="250" Background="DarkGray" Margin="10" AllowDrop="True"
-                            Drop="Column_Drop" DragOver="Column_DragOver">
-                    <TextBlock Text="New" FontWeight="Bold" Margin="5"/>
-                </StackPanel>
+
                 <StackPanel x:Name="ToDoPanel" Width="250" Background="LightGray" Margin="10" AllowDrop="True"
                             Drop="Column_Drop" DragOver="Column_DragOver">
                     <TextBlock Text="To Do" FontWeight="Bold" Margin="5"/>
-                </StackPanel>
-                <StackPanel x:Name="InProgressPanel" Width="250" Background="LightGreen" Margin="10" AllowDrop="True"
-                            Drop="Column_Drop" DragOver="Column_DragOver">
-                    <TextBlock Text="In Progress" FontWeight="Bold" Margin="5"/>
                 </StackPanel>
                 <StackPanel x:Name="DonePanel" Width="250" Background="Green" Margin="10" AllowDrop="True"
                             Drop="Column_Drop" DragOver="Column_DragOver">

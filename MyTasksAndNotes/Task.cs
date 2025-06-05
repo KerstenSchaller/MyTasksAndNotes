@@ -15,6 +15,7 @@ namespace MyTasksAndNotes
         string globalPath = "";
         string baseName = "testNote";
         List<Note> notes = new List<Note>();
+        List<Note> tasks = new List<Note>();
         int highestIndex;
 
         private static readonly Lazy<NoteContainer> _instance = new Lazy<NoteContainer>(() => new NoteContainer());
@@ -61,18 +62,28 @@ namespace MyTasksAndNotes
                         maxNumber = number;
                     }
 
-                    var tLastNote = addNote(rootFolder, prefix, (int)number); // Call the provided action for each matching subfolder
-                    if (tLastNote.isTask)
+                    var tnote = new Note(rootFolder, prefix, (int)number); // just create to read task status
+                    if (tnote.isTask)
                     {
-                        lastTask = tLastNote;
+                        lastTask = addTask(rootFolder, prefix, (int)number); // Call the provided action for each matching subfolder
                     }
                     else
                     {
-                        lastNote = tLastNote;
+                        lastNote = addNote(rootFolder, prefix, (int)number); // Call the provided action for each matching subfolder
                     }
                 }
             }
             return maxNumber;
+        }
+
+        public List<Note> getNotes() 
+        {
+            return notes;
+        }
+
+        public List<Note> getTasks()
+        {
+            return tasks;
         }
 
         Note addNote(string rootFolder, string name, int uid)
@@ -92,14 +103,14 @@ namespace MyTasksAndNotes
         Note addTask(string rootFolder, string name, int uid)
         {
             Note task = new Note(rootFolder, name, uid, true);
-            notes.Add(task);
+            tasks.Add(task);
             return task;
         }
         public Note addNewTask()
         {
             highestIndex++;
             Note task = new Note(globalPath, baseName, highestIndex, true);
-            notes.Add(task);
+            tasks.Add(task);
             return task;
         }
 
@@ -113,13 +124,17 @@ namespace MyTasksAndNotes
             return lastTask;
         }
     }
+
+        public enum TaskState { Todo,Done }
         public class Note
         {
             [JsonProperty] public Dictionary<int, NoteDataItem.NoteDataItem> noteDataItems = new Dictionary<int, NoteDataItem.NoteDataItem>();
             [JsonProperty] int uid;
-            [JsonProperty] string name;
+            [JsonProperty] public string name="";
             [JsonProperty] public bool isTask = false;
-            static uint numberOfNotes;
+            [JsonProperty] public TaskState taskState = TaskState.Todo;
+
+        static uint numberOfNotes;
             string folderPath;
             string dataFilePath;
 
@@ -127,9 +142,8 @@ namespace MyTasksAndNotes
             public Note() { }
             public Note(string baseDirectory, string _name, int _uid, bool _isTask = false)
             {
-                name = _name;
                 uid = _uid;
-                folderPath = Path.Combine(baseDirectory, name + uid);
+                folderPath = Path.Combine(baseDirectory, _name + uid);
                 dataFilePath = Path.Combine(folderPath, "data.json");
                 isTask = _isTask;
 
@@ -143,6 +157,8 @@ namespace MyTasksAndNotes
                 {
                     // read existing
                     var tNote = DeserializeNote();
+                    isTask = tNote.isTask;
+                    name = tNote.name;
                     noteDataItems = tNote.noteDataItems;
                 }
 
@@ -161,6 +177,7 @@ namespace MyTasksAndNotes
                 {
                     noteDataItems.Add(noteDataItems.Count, new NoteDataItem.Text(item));
                 }
+                if (name == "") name = item;// set name from first text item
                 SerializeNote();
                 return retval;
 
@@ -224,7 +241,8 @@ namespace MyTasksAndNotes
                 };
                 var json = System.IO.File.ReadAllText(dataFilePath);
                 if (json == "") json = "{}";
-                return JsonConvert.DeserializeObject<Note>(json, settings);
+                var retval = JsonConvert.DeserializeObject<Note>(json, settings);
+                return retval;
             }
         }
 
