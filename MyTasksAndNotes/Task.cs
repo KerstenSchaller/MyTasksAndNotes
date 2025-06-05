@@ -21,6 +21,7 @@ namespace MyTasksAndNotes
         public static NoteContainer Instance => _instance.Value;
 
         Note lastNote;
+        Note lastTask;
 
 
         private NoteContainer()
@@ -60,7 +61,15 @@ namespace MyTasksAndNotes
                         maxNumber = number;
                     }
 
-                    lastNote = addNote(rootFolder, prefix, (int)number); // Call the provided action for each matching subfolder
+                    var tLastNote = addNote(rootFolder, prefix, (int)number); // Call the provided action for each matching subfolder
+                    if (tLastNote.isTask)
+                    {
+                        lastTask = tLastNote;
+                    }
+                    else
+                    {
+                        lastNote = tLastNote;
+                    }
                 }
             }
             return maxNumber;
@@ -69,16 +78,27 @@ namespace MyTasksAndNotes
         Note addNote(string rootFolder, string name, int uid)
         {
             Note note = new Note(rootFolder, name, uid);
-
             notes.Add(note);
             return note;
         }
         public Note addNewNote() 
         {
             highestIndex++;
-            //Note note = new Note(globalPath, baseName, highestIndex);
-            //notes.Add(note);
-            Task task = new Task(globalPath, baseName, highestIndex);
+            Note note = new Note(globalPath, baseName, highestIndex);
+            notes.Add(note);
+            return note;
+        }
+
+        Note addTask(string rootFolder, string name, int uid)
+        {
+            Note task = new Note(rootFolder, name, uid, true);
+            notes.Add(task);
+            return task;
+        }
+        public Note addNewTask()
+        {
+            highestIndex++;
+            Note task = new Note(globalPath, baseName, highestIndex, true);
             notes.Add(task);
             return task;
         }
@@ -87,25 +107,31 @@ namespace MyTasksAndNotes
         {
             return lastNote;
         }
+
+        public Note getLastTask()
+        {
+            return lastTask;
+        }
     }
         public class Note
         {
-            //[JsonProperty] public List<NoteDataItem.NoteDataItem> NoteDataItems = new List<NoteDataItem.NoteDataItem>();
             [JsonProperty] public Dictionary<int, NoteDataItem.NoteDataItem> noteDataItems = new Dictionary<int, NoteDataItem.NoteDataItem>();
             [JsonProperty] int uid;
             [JsonProperty] string name;
+            [JsonProperty] public bool isTask = false;
             static uint numberOfNotes;
             string folderPath;
             string dataFilePath;
 
 
             public Note() { }
-            public Note(string baseDirectory, string _name, int _uid)
+            public Note(string baseDirectory, string _name, int _uid, bool _isTask = false)
             {
                 name = _name;
                 uid = _uid;
                 folderPath = Path.Combine(baseDirectory, name + uid);
                 dataFilePath = Path.Combine(folderPath, "data.json");
+                isTask = _isTask;
 
 
                 if (!Directory.Exists(folderPath))
@@ -202,14 +228,7 @@ namespace MyTasksAndNotes
             }
         }
 
-    public class Task : Note
-    {
-        [JsonProperty] const bool isTask = true;
-        [JsonProperty] string testValue = "blabla";
 
-        public Task(string baseDirectory, string _name, int _uid) : base(baseDirectory, _name, _uid) { }
-
-    }
 
 
 

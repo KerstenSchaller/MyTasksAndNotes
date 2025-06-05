@@ -40,6 +40,7 @@ namespace MyTasksAndNotes
         Point centerIndex;
 
         static Note lastEditedNote = null;
+        static Note lastEditedTask = null;
 
         public HoveringMenu(Window _mainWindow)
         {
@@ -111,8 +112,8 @@ namespace MyTasksAndNotes
 
             var mainItem = new MenuItem(Center,"MyTasksAndNotes", showMainWindow);
             currentMenuItem = mainItem;
-            var newTaskItem = new MenuItem(Up,"New Task", null); // Up
-            var editTaskItem = new MenuItem(Down,"Edit last task", null); // Down
+            var newTaskItem = new MenuItem(Up,"New Task", addTask); // Up
+            var editTaskItem = new MenuItem(Down,"Edit last task", editLastTask); // Down
             var newNoteItem = new MenuItem(Left,"New Note", addNote); // Left 
             var editNoteItem = new MenuItem(Right,"Edit last Note", editLastNote); // Right
 
@@ -132,15 +133,28 @@ namespace MyTasksAndNotes
             Close();
         }
 
-        void showMainWindow() 
+
+        void addTask() 
         {
-            mainWindow.Show();
-            mainWindow.WindowState = WindowState.Normal;
-            mainWindow.Activate();
+            var newTask = NoteContainer.Instance.addNewTask();
+            lastEditedTask = newTask;
+            RichTextEditor.TaskViewWindow taskViewWindowController = new RichTextEditor.TaskViewWindow(newTask);
+            taskViewWindowController.Show();
+            taskViewWindowController.Activate();
             Close();
         }
 
-        void addNote() 
+        void editLastTask()
+        {
+            if (lastEditedTask == null) lastEditedTask = NoteContainer.Instance.getLastTask();
+            RichTextEditor.TaskViewWindow taskViewWindowController = new RichTextEditor.TaskViewWindow(lastEditedTask);
+            taskViewWindowController.Show();
+            taskViewWindowController.Activate();
+            Close();
+        }
+
+
+        void addNote()
         {
             var newNote = NoteContainer.Instance.addNewNote();
             lastEditedNote = newNote;
@@ -150,6 +164,13 @@ namespace MyTasksAndNotes
             Close();
         }
 
+        void showMainWindow() 
+        {
+            mainWindow.Show();
+            mainWindow.WindowState = WindowState.Normal;
+            mainWindow.Activate();
+            Close();
+        }
 
         void addMenuRelativeItems(MenuItem root, MenuItem child) 
         {
