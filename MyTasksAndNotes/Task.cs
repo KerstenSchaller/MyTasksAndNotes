@@ -1,45 +1,38 @@
-﻿using MyTasksAndNotes.TaskDataItem;
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
-using System.Drawing;
-using System.Formats.Asn1;
 using System.IO;
-using System.Threading.Tasks;
-using System.Xml.Linq;
 
 
 namespace MyTasksAndNotes
 {
-    class TaskContainer 
+    class NoteContainer 
     {
-        string path = "tasks";
-        public Task testTask;
-        public TaskContainer()
+        string path = "Notes";
+        public Note testNote;
+        public NoteContainer()
         {
             //if (!Directory.Exists(path))
             {
                 Directory.CreateDirectory(path);
-                testTask = new Task(path, "testTask");
+                testNote = new Note(path, "testNote");
             }
 
         }
-
-       
     }
-    class Task
+    class Note
     {
-        //[JsonProperty] public List<TaskDataItem.TaskDataItem> taskDataItems = new List<TaskDataItem.TaskDataItem>();
-        [JsonProperty] public Dictionary<int,TaskDataItem.TaskDataItem> taskDataItems = new Dictionary<int,TaskDataItem.TaskDataItem>();
+        //[JsonProperty] public List<NoteDataItem.NoteDataItem> NoteDataItems = new List<NoteDataItem.NoteDataItem>();
+        [JsonProperty] public Dictionary<int,NoteDataItem.NoteDataItem> noteDataItems = new Dictionary<int,NoteDataItem.NoteDataItem>();
         [JsonProperty] uint uid;
         [JsonProperty] string name;
-        static uint numberOfTasks;
+        static uint numberOfNotes;
         string folderPath;
         string dataFilePath;
 
-        public Task() { }
-        public Task(string baseDirectory, string _name) 
+        public Note() { }
+        public Note(string baseDirectory, string _name) 
         {
             name = _name;
             uid = getUid();
@@ -56,9 +49,9 @@ namespace MyTasksAndNotes
             else 
             {
                 // read existing
-                var ttask = new Task();
-                ttask = DeserializeTask();
-                taskDataItems = ttask.taskDataItems;
+                var tNote = new Note();
+                tNote = DeserializeNote();
+                noteDataItems = tNote.noteDataItems;
             }
 
         }
@@ -68,15 +61,15 @@ namespace MyTasksAndNotes
             bool retval = false;
             if (IsUrl(item)) 
             {
-                taskDataItems.Add(taskDataItems.Count, new TaskDataItem.Link(item));
+                noteDataItems.Add(noteDataItems.Count, new NoteDataItem.Link(item));
                 retval = true;
 
             }
             else
             {
-                taskDataItems.Add(taskDataItems.Count, new TaskDataItem.Text(item));
+                noteDataItems.Add(noteDataItems.Count, new NoteDataItem.Text(item));
             }
-            SerializeTask();
+            SerializeNote();
             return retval;
 
 
@@ -84,21 +77,21 @@ namespace MyTasksAndNotes
 
         public void addImageItem(System.Drawing.Image item)
         {
-            taskDataItems.Add(taskDataItems.Count, new TaskDataItem.Image(folderPath, item));
-            SerializeTask();
+            noteDataItems.Add(noteDataItems.Count, new NoteDataItem.Image(folderPath, item));
+            SerializeNote();
         }
 
         public void addFileItem(string item)
         {
-            taskDataItems.Add(taskDataItems.Count, new TaskDataItem.File(item));
-            SerializeTask();
+            noteDataItems.Add(noteDataItems.Count, new NoteDataItem.File(item));
+            SerializeNote();
 
         }
 
         private uint getUid()
         {
-            numberOfTasks++;
-            return numberOfTasks;
+            numberOfNotes++;
+            return numberOfNotes;
         }
 
         public bool IsUrl(string input)
@@ -116,7 +109,7 @@ namespace MyTasksAndNotes
             return false;
         }
 
-        public void SerializeTask()
+        public void SerializeNote()
         {
             var settings = new JsonSerializerSettings
             {
@@ -128,8 +121,8 @@ namespace MyTasksAndNotes
             System.IO.File.WriteAllText(dataFilePath, json);
         }
 
-        // Static method: load task from file
-        public Task DeserializeTask()
+        // Static method: load Note from file
+        public Note DeserializeNote()
         {
 
             var settings = new JsonSerializerSettings
@@ -138,22 +131,22 @@ namespace MyTasksAndNotes
                 Formatting = Formatting.Indented
             };
             var json = System.IO.File.ReadAllText(dataFilePath);
-            return JsonConvert.DeserializeObject<Task>(json,settings);
+            return JsonConvert.DeserializeObject<Note>(json,settings);
         }
     }
 
 
 
-    namespace TaskDataItem
+    namespace NoteDataItem
     {
         [JsonObject(MemberSerialization.OptIn)]
-        public class TaskDataItem
+        public class NoteDataItem
         {
             //[JsonProperty] public DateTime TimeStamp { get; set; } = DateTime.Now;
             //[JsonProperty] public string Value { get; set; }
         }
 
-        public class Text : TaskDataItem
+        public class Text : NoteDataItem
         {
             [JsonProperty] public string TextValue { get; set; }
 
@@ -165,7 +158,7 @@ namespace MyTasksAndNotes
             }
         }
 
-        public class Image : TaskDataItem
+        public class Image : NoteDataItem
         {
             [JsonProperty] public string Path { get; set; }
            
@@ -183,7 +176,7 @@ namespace MyTasksAndNotes
             }
         }
 
-        public class File : TaskDataItem
+        public class File : NoteDataItem
         {
             [JsonProperty] public string Path { get; set; }
 
@@ -196,7 +189,7 @@ namespace MyTasksAndNotes
             }
         }
 
-        public class Link : TaskDataItem
+        public class Link : NoteDataItem
         {
             [JsonProperty] public string Url { get; set; }
 
@@ -208,9 +201,9 @@ namespace MyTasksAndNotes
             }
         }
 
-        public class TaskDataItemConverter : JsonConverter
+        public class NoteDataItemConverter : JsonConverter
         {
-            public override bool CanConvert(Type objectType) => objectType == typeof(TaskDataItem);
+            public override bool CanConvert(Type objectType) => objectType == typeof(NoteDataItem);
 
             public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
             {

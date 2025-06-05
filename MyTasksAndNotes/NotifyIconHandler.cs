@@ -59,6 +59,7 @@ public class NotifyIconHandler
 
     private void ShowMainWindow()
     {
+
         mainWindow.Show();
         mainWindow.WindowState = WindowState.Normal;
         mainWindow.Activate();

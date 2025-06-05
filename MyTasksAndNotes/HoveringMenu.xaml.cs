@@ -41,10 +41,22 @@ namespace MyTasksAndNotes
 
         public HoveringMenu(Window _mainWindow)
         {
+            InitializeComponent();
             centerIndex = new Point((int)(gridSize / 2), (int)(gridSize / 2));
 
+
+            Width = SystemParameters.PrimaryScreenWidth;
+            Height = SystemParameters.PrimaryScreenHeight;
+            Left = 0;
+            Top = 0;
+
+            Grid.Width = Width;
+            Grid.Height = Height;
+
+            WindowState = WindowState.Maximized;
+            ResizeMode = ResizeMode.NoResize;
+
             mainWindow = _mainWindow;
-            InitializeComponent();
             this.Activate();
             this.Focusable = true;
             this.Focus(); // Ensure the window has keyboard focus
@@ -52,6 +64,7 @@ namespace MyTasksAndNotes
 
             InitializeCellData();
 
+            //register key combination callbacks
             HotkeyManager.getInstance().subscribeHotkey(MoveUp, HotKeyIds.MENU_UP);
             HotkeyManager.getInstance().subscribeHotkey(MoveDown, HotKeyIds.MENU_DOWN);
             HotkeyManager.getInstance().subscribeHotkey(MoveLeft, HotKeyIds.MENU_LEFT);
@@ -121,70 +134,72 @@ namespace MyTasksAndNotes
 
         private void RenderGrid()
         {
+            // Clear existing grid elements before rendering the new grid
             RadialGrid.Children.Clear();
-            
-            StackPanel panel = new StackPanel();
+
+            // Loop through each cell in the grid based on gridSize
             for (int y = 0; y < gridSize; y++)
             {
                 for (int x = 0; x < gridSize; x++)
                 {
-                    var key = new Point(x, y);
-                    if (menuItems.ContainsKey(key)) 
-                    {
-                        var item = menuItems[key];
-                    
-                        if (new Point(x,y) == centerIndex)
-                        {
-                            currentMenuItem = item;
-                            panel = new StackPanel
-                            {
-                                Background = Brushes.Orange,
-                                Margin = new Thickness(5),
-                                HorizontalAlignment = HorizontalAlignment.Center,
-                                VerticalAlignment = VerticalAlignment.Center,
-                                Width = 100,
-                                Height = 100
-                            };
-                        }
-                        else
-                        {
-                            panel = new StackPanel
-                            {
-                                Visibility = (item.text == "") ? Visibility.Hidden : Visibility.Visible,
-                                Background = (item.text != "") ? Brushes.Gray : Brushes.White,
-                                HorizontalAlignment = HorizontalAlignment.Center,
-                                VerticalAlignment = VerticalAlignment.Center,
-                                Margin = new Thickness(5),
-                                Width = 100,
-                                Height = 100
-                            };
-                        }
+                    Point key = new Point(x, y);
 
+                    // Create the appropriate panel for the current grid position
+                    StackPanel panel = CreatePanelForPosition(key);
 
-                        TextBlock textBlock = new TextBlock
-                        {
-                            Text = item.text,
-                            HorizontalAlignment = HorizontalAlignment.Center,
-                            VerticalAlignment = VerticalAlignment.Center,
-                            TextAlignment = TextAlignment.Center,
-                            TextWrapping = TextWrapping.Wrap
-                        };
-                        panel.Children.Add(textBlock);
-                    }
-                    else 
-                    {
-                        panel = new StackPanel
-                        {
-                            Visibility = Visibility.Hidden,
-                            Margin = new Thickness(5),
-                            Width = 100,
-                            Height = 100
-                        };
-                    }
-
+                    // Add the panel to the UI grid container
                     RadialGrid.Children.Add(panel);
                 }
             }
+        }
+
+        private StackPanel CreatePanelForPosition(Point key)
+        {
+            // Create a new StackPanel with shared default layout properties
+            StackPanel panel = new StackPanel
+            {
+                Margin = new Thickness(5),
+                Width = 100,
+                Height = 100,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center
+            };
+
+            // Check if a menu item exists at the current grid position
+            if (menuItems.TryGetValue(key, out var item))
+            {
+                // If this is the center item, highlight it and set it as the current menu item
+                if (key == centerIndex)
+                {
+                    currentMenuItem = item;
+                    panel.Background = Brushes.Orange;
+                }
+                else
+                {
+                    // Set visibility and background based on whether the item has text
+                    panel.Visibility = string.IsNullOrEmpty(item.text) ? Visibility.Hidden : Visibility.Visible;
+                    panel.Background = string.IsNullOrEmpty(item.text) ? Brushes.White : Brushes.Gray;
+                }
+
+                // Add a TextBlock to display the item's text
+                TextBlock textBlock = new TextBlock
+                {
+                    Text = item.text,
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    VerticalAlignment = VerticalAlignment.Center,
+                    TextAlignment = TextAlignment.Center,
+                    TextWrapping = TextWrapping.Wrap
+                };
+
+                panel.Children.Add(textBlock);
+            }
+            else
+            {
+                // No item at this position — hide the panel
+                panel.Visibility = Visibility.Hidden;
+            }
+
+            return panel;
         }
 
         // Moves all elements in the grid one cell to the right (visual shift left)

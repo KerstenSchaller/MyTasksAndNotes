@@ -3,6 +3,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Documents;
 using System;
+using System.ComponentModel;
 
 namespace MyTasksAndNotes
 {
@@ -35,6 +36,17 @@ namespace MyTasksAndNotes
 
             RichTextEditor.TaskViewWindow taskViewWindow = new RichTextEditor.TaskViewWindow();
             taskViewWindow.Show();
+
+            this.Closing += MainWindow_Closing;
+        }
+
+        private void MainWindow_Closing(object sender, CancelEventArgs e)
+        {
+            // Cancel the close operation
+            e.Cancel = true;
+
+            // Minimize the window instead
+            this.WindowState = WindowState.Minimized;
         }
 
         private void MainWindow_StateChanged(object sender, EventArgs e)

@@ -1,9 +1,7 @@
 ﻿using System;
 
-using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
-using System.Windows.Forms;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
@@ -13,8 +11,8 @@ namespace MyTasksAndNotes
     {
 
         System.Windows.Controls.RichTextBox editor;
-        TaskContainer taskContainer;
-        Task task;
+        NoteContainer noteContainer;
+        Note note;
         RichTextEditor.TaskViewWindow taskViewWindow;
 
 
@@ -23,10 +21,10 @@ namespace MyTasksAndNotes
             editor = _editor;
             taskViewWindow = _taskViewWindow;
             
-            taskContainer = new TaskContainer();
-            task = taskContainer.testTask;
+            noteContainer = new NoteContainer();
+            note = noteContainer.testNote;
 
-            ProcessTaskDataItems(task.taskDataItems);
+            ProcessTaskDataItems(note.noteDataItems);
 
             var hyperlink = new Hyperlink(new Run("OpenAI"))
             {
@@ -52,7 +50,7 @@ namespace MyTasksAndNotes
 
         public void addNewText(string text)
         {
-            bool isLink = task.addStringItem(text);
+            bool isLink = note.addStringItem(text);
             if (isLink) 
             {
                 addLink(text);
@@ -75,12 +73,12 @@ namespace MyTasksAndNotes
 
         public void addTextToTask(string text) 
         {
-            task.addStringItem(text);
+            note.addStringItem(text);
         }
 
         public void addNewLink(string url) 
         {
-            task.addStringItem(url);
+            note.addStringItem(url);
             addLink(url);
         }
 
@@ -104,7 +102,7 @@ namespace MyTasksAndNotes
         public void InsertNewImage(string filePath) 
         {
             //InsertImage(filePath);
-            task.addImageItem(InsertImage(filePath));
+            note.addImageItem(InsertImage(filePath));
         }
         private System.Drawing.Image InsertImage(string filePath)
         {
@@ -145,22 +143,22 @@ namespace MyTasksAndNotes
             return ext == ".jpg" || ext == ".jpeg" || ext == ".png" || ext == ".bmp" || ext == ".gif";
         }
 
-        public void ProcessTaskDataItems(System.Collections.Generic.Dictionary<int,TaskDataItem.TaskDataItem> items)
+        public void ProcessTaskDataItems(System.Collections.Generic.Dictionary<int,NoteDataItem.NoteDataItem> items)
         {
             foreach (var item in items)
             {
                 switch (item.Value)
                 {
-                    case MyTasksAndNotes.TaskDataItem.Text textItem:
+                    case MyTasksAndNotes.NoteDataItem.Text textItem:
                         addText(textItem.TextValue, item.Key);
                         break;
-                    case MyTasksAndNotes.TaskDataItem.Image imageItem:
+                    case MyTasksAndNotes.NoteDataItem.Image imageItem:
                         InsertImage(imageItem.Path);
                         break;
-                    case MyTasksAndNotes.TaskDataItem.File fileItem:
+                    case MyTasksAndNotes.NoteDataItem.File fileItem:
                         //HandleFile(fileItem);
                         break;
-                    case MyTasksAndNotes.TaskDataItem.Link linkItem:
+                    case MyTasksAndNotes.NoteDataItem.Link linkItem:
                         addLink(linkItem.Url, item.Key);
                         break;
                     default:
@@ -173,9 +171,9 @@ namespace MyTasksAndNotes
 
         internal void updateText(int tag, string text)
         {
-            var item = (TaskDataItem.Text)task.taskDataItems[tag];
+            var item = (NoteDataItem.Text)note.noteDataItems[tag];
             item.TextValue = text;
-            task.SerializeTask();
+            note.SerializeNote();
 
         }
     }
