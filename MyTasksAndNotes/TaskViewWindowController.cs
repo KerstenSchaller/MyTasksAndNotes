@@ -16,13 +16,12 @@ namespace MyTasksAndNotes
         RichTextEditor.TaskViewWindow taskViewWindow;
 
 
-        public TaskViewWindowController(System.Windows.Controls.RichTextBox _editor, RichTextEditor.TaskViewWindow _taskViewWindow) 
+        public TaskViewWindowController(System.Windows.Controls.RichTextBox _editor, RichTextEditor.TaskViewWindow _taskViewWindow, Note _note) 
         {
             editor = _editor;
             taskViewWindow = _taskViewWindow;
             
-            noteContainer = new NoteContainer();
-            note = noteContainer.testNote;
+            note = _note;
 
             ProcessTaskDataItems(note.noteDataItems);
 

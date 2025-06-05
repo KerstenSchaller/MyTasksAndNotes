@@ -39,7 +39,8 @@ namespace RichTextEditor
 
         public string DelimeterLine = "######################################################\n";
 
-        public TaskViewWindow()
+
+        public TaskViewWindow(Note _note)
         {
             InitializeComponent();
             // handle pasting, just data content, files must be handeled via capturing ctrl + v
@@ -50,10 +51,10 @@ namespace RichTextEditor
             SpellCheck.SetIsEnabled(editor, false);
 
 
+            Note note =  _note;
 
 
-
-            taskViewWindowController = new TaskViewWindowController(editor, this);
+            taskViewWindowController = new TaskViewWindowController(editor, this, note);
 
             this.StateChanged += Window_StateChanged;
             this.Closing += MainWindow_Closing;

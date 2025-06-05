@@ -3,137 +3,203 @@ using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.IO;
-
+using System.Security.Cryptography;
+using System.Text.RegularExpressions;
+using System.Xml.Linq;
 
 namespace MyTasksAndNotes
 {
-    class NoteContainer 
+    class NoteContainer
     {
         string path = "Notes";
-        public Note testNote;
-        public NoteContainer()
+        string baseName = "testNote";
+        List<Note> notes = new List<Note>();
+        int highestIndex;
+
+        private static readonly Lazy<NoteContainer> _instance = new Lazy<NoteContainer>(() => new NoteContainer());
+        public static NoteContainer Instance => _instance.Value;
+
+        Note lastNote;
+
+
+        private NoteContainer()
         {
             //if (!Directory.Exists(path))
             {
                 Directory.CreateDirectory(path);
-                testNote = new Note(path, "testNote");
+                
+            }
+            highestIndex = ProcessSubfolders(path, baseName);
+
+
+        }
+
+        public int ProcessSubfolders(string rootFolder, string prefix)
+        {
+            if (!Directory.Exists(rootFolder))
+            {
+                Console.WriteLine($"Directory '{rootFolder}' does not exist.");
+                throw new Exception();
             }
 
+
+            string[] subfolders = Directory.GetDirectories(rootFolder);
+            Regex pattern = new Regex($"^{Regex.Escape(prefix)}(\\d+)$");
+
+            int maxNumber = 0;
+
+            foreach (var folder in subfolders)
+            {
+                string folderName = Path.GetFileName(folder);
+                Match match = pattern.Match(folderName);
+
+                if (match.Success)
+                {
+                    int number = int.Parse(match.Groups[1].Value);
+                    if (number > maxNumber)
+                    {
+                        maxNumber = number;
+                    }
+
+                    lastNote = addNote(rootFolder, prefix, (int)number); // Call the provided action for each matching subfolder
+                }
+            }
+            return maxNumber;
+        }
+
+        Note addNote(string rootFolder, string name, int uid)
+        {
+            Note note = new Note(rootFolder, name, uid);
+            notes.Add(note);
+            return note;
+        }
+        public Note addNewNote() 
+        {
+            highestIndex++;
+            Note note = new Note(path, baseName, highestIndex);
+            notes.Add(note);
+            return note;
+        }
+
+        public Note getLastNote()
+        {
+            return lastNote;
         }
     }
-    class Note
-    {
-        //[JsonProperty] public List<NoteDataItem.NoteDataItem> NoteDataItems = new List<NoteDataItem.NoteDataItem>();
-        [JsonProperty] public Dictionary<int,NoteDataItem.NoteDataItem> noteDataItems = new Dictionary<int,NoteDataItem.NoteDataItem>();
-        [JsonProperty] uint uid;
-        [JsonProperty] string name;
-        static uint numberOfNotes;
-        string folderPath;
-        string dataFilePath;
-
-        public Note() { }
-        public Note(string baseDirectory, string _name) 
+        public class Note
         {
-            name = _name;
-            uid = getUid();
-            folderPath = Path.Combine(baseDirectory, name + "_" + uid);
-            dataFilePath = Path.Combine(folderPath, "data.json");
+            //[JsonProperty] public List<NoteDataItem.NoteDataItem> NoteDataItems = new List<NoteDataItem.NoteDataItem>();
+            [JsonProperty] public Dictionary<int, NoteDataItem.NoteDataItem> noteDataItems = new Dictionary<int, NoteDataItem.NoteDataItem>();
+            [JsonProperty] int uid;
+            [JsonProperty] string name;
+            static uint numberOfNotes;
+            string folderPath;
+            string dataFilePath;
 
-            
-            if (!Directory.Exists(folderPath))
-            {
-                // create
-                Directory.CreateDirectory(folderPath);
-                System.IO.File.Create(dataFilePath);
-            }
-            else 
-            {
-                // read existing
-                var tNote = new Note();
-                tNote = DeserializeNote();
-                noteDataItems = tNote.noteDataItems;
-            }
 
-        }
-
-        public bool addStringItem(string item) 
-        {
-            bool retval = false;
-            if (IsUrl(item)) 
+            public Note() { }
+            public Note(string baseDirectory, string _name, int _uid)
             {
-                noteDataItems.Add(noteDataItems.Count, new NoteDataItem.Link(item));
-                retval = true;
+                name = _name;
+                uid = _uid;
+                folderPath = Path.Combine(baseDirectory, name + uid);
+                dataFilePath = Path.Combine(folderPath, "data.json");
+
+
+                if (!Directory.Exists(folderPath))
+                {
+                    // create
+                    Directory.CreateDirectory(folderPath);
+                    System.IO.File.Create(dataFilePath);
+                }
+                else
+                {
+                    // read existing
+                    var tNote = DeserializeNote();
+                    noteDataItems = tNote.noteDataItems;
+                }
 
             }
-            else
+
+            public bool addStringItem(string item)
             {
-                noteDataItems.Add(noteDataItems.Count, new NoteDataItem.Text(item));
+                bool retval = false;
+                if (IsUrl(item))
+                {
+                    noteDataItems.Add(noteDataItems.Count, new NoteDataItem.Link(item));
+                    retval = true;
+
+                }
+                else
+                {
+                    noteDataItems.Add(noteDataItems.Count, new NoteDataItem.Text(item));
+                }
+                SerializeNote();
+                return retval;
+
+
             }
-            SerializeNote();
-            return retval;
 
+            public void addImageItem(System.Drawing.Image item)
+            {
+                noteDataItems.Add(noteDataItems.Count, new NoteDataItem.Image(folderPath, item));
+                SerializeNote();
+            }
 
-        }
+            public void addFileItem(string item)
+            {
+                noteDataItems.Add(noteDataItems.Count, new NoteDataItem.File(item));
+                SerializeNote();
 
-        public void addImageItem(System.Drawing.Image item)
-        {
-            noteDataItems.Add(noteDataItems.Count, new NoteDataItem.Image(folderPath, item));
-            SerializeNote();
-        }
+            }
 
-        public void addFileItem(string item)
-        {
-            noteDataItems.Add(noteDataItems.Count, new NoteDataItem.File(item));
-            SerializeNote();
+            private uint getUid()
+            {
+                numberOfNotes++;
+                return numberOfNotes;
+            }
 
-        }
+            public bool IsUrl(string input)
+            {
+                if (string.IsNullOrWhiteSpace(input))
+                    return false;
 
-        private uint getUid()
-        {
-            numberOfNotes++;
-            return numberOfNotes;
-        }
+                // Check if it's a valid URL
+                if (Uri.TryCreate(input, UriKind.Absolute, out Uri uriResult) &&
+                    (uriResult.Scheme == Uri.UriSchemeHttp || uriResult.Scheme == Uri.UriSchemeHttps || uriResult.Scheme == Uri.UriSchemeFtp))
+                {
+                    return true;
+                }
 
-        public bool IsUrl(string input)
-        {
-            if (string.IsNullOrWhiteSpace(input))
                 return false;
-
-            // Check if it's a valid URL
-            if (Uri.TryCreate(input, UriKind.Absolute, out Uri uriResult) &&
-                (uriResult.Scheme == Uri.UriSchemeHttp || uriResult.Scheme == Uri.UriSchemeHttps || uriResult.Scheme == Uri.UriSchemeFtp))
-            {
-                return true;
             }
 
-            return false;
-        }
-
-        public void SerializeNote()
-        {
-            var settings = new JsonSerializerSettings
+            public void SerializeNote()
             {
-                TypeNameHandling = TypeNameHandling.Auto,
-                Formatting = Formatting.Indented
-            };
-            var json = JsonConvert.SerializeObject(this, settings);
-            System.IO.File.Delete(dataFilePath);
-            System.IO.File.WriteAllText(dataFilePath, json);
-        }
+                var settings = new JsonSerializerSettings
+                {
+                    TypeNameHandling = TypeNameHandling.Auto,
+                    Formatting = Formatting.Indented
+                };
+                var json = JsonConvert.SerializeObject(this, settings);
+                System.IO.File.Delete(dataFilePath);
+                System.IO.File.WriteAllText(dataFilePath, json);
+            }
 
-        // Static method: load Note from file
-        public Note DeserializeNote()
-        {
-
-            var settings = new JsonSerializerSettings
+            // Static method: load Note from file
+            public Note DeserializeNote()
             {
-                TypeNameHandling = TypeNameHandling.Auto,
-                Formatting = Formatting.Indented
-            };
-            var json = System.IO.File.ReadAllText(dataFilePath);
-            return JsonConvert.DeserializeObject<Note>(json,settings);
+
+                var settings = new JsonSerializerSettings
+                {
+                    TypeNameHandling = TypeNameHandling.Auto,
+                    Formatting = Formatting.Indented
+                };
+                var json = System.IO.File.ReadAllText(dataFilePath);
+                if (json == "") json = "{}";
+                return JsonConvert.DeserializeObject<Note>(json, settings);
+            }
         }
-    }
 
 
 
@@ -161,7 +227,7 @@ namespace MyTasksAndNotes
         public class Image : NoteDataItem
         {
             [JsonProperty] public string Path { get; set; }
-           
+
 
             public Image() { }
 

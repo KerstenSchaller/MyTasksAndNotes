@@ -90,6 +90,11 @@ namespace MyTasksAndNotes
 
         }
 
+        public void unsubscribeHotkey(Action callback, int hotKeyId) 
+        {
+            actions[hotKeyId].Remove(callback);
+        }
+
         public void subscribeHotkey(Action callback, int hotKeyId ) 
         {
             if (actions.ContainsKey(hotKeyId)) 
@@ -106,7 +111,8 @@ namespace MyTasksAndNotes
         {
             
             var subscribers = actions[hotkeyId];
-            foreach(var callback in subscribers) 
+            List<Action> tlist = new List<Action>(subscribers);
+            foreach(var callback in tlist) 
             {
                 callback();
             }
@@ -152,7 +158,7 @@ namespace MyTasksAndNotes
         public const int MENU_RIGHT = 90001;
         public const int MENU_UP = 90002;
         public const int MENU_DOWN = 90003;
-        public const int MENU_ENTER = 9000;
+        public const int MENU_ENTER = 90004;
     }
 
     public static class VirtualKeys

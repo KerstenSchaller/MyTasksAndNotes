@@ -34,8 +34,7 @@ namespace MyTasksAndNotes
 
             NotifyIconHandler notifyIconHandler = new NotifyIconHandler(this);
 
-            RichTextEditor.TaskViewWindow taskViewWindow = new RichTextEditor.TaskViewWindow();
-            taskViewWindow.Show();
+
 
             this.Closing += MainWindow_Closing;
         }

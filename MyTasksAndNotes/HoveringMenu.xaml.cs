@@ -39,6 +39,8 @@ namespace MyTasksAndNotes
 
         Point centerIndex;
 
+        static Note lastEditedNote = null;
+
         public HoveringMenu(Window _mainWindow)
         {
             InitializeComponent();
@@ -71,9 +73,21 @@ namespace MyTasksAndNotes
             HotkeyManager.getInstance().subscribeHotkey(MoveRight, HotKeyIds.MENU_RIGHT);
             HotkeyManager.getInstance().subscribeHotkey(MenuEnter, HotKeyIds.MENU_ENTER);
 
+            Closing += HoveringMenu_Closing;
+
 
             setupMenu();
             RenderGrid();
+        }
+
+        private void HoveringMenu_Closing(object? sender, System.ComponentModel.CancelEventArgs e)
+        {
+            //register key combination callbacks
+            HotkeyManager.getInstance().unsubscribeHotkey(MoveUp, HotKeyIds.MENU_UP);
+            HotkeyManager.getInstance().unsubscribeHotkey(MoveDown, HotKeyIds.MENU_DOWN);
+            HotkeyManager.getInstance().unsubscribeHotkey(MoveLeft, HotKeyIds.MENU_LEFT);
+            HotkeyManager.getInstance().unsubscribeHotkey(MoveRight, HotKeyIds.MENU_RIGHT);
+            HotkeyManager.getInstance().unsubscribeHotkey(MenuEnter, HotKeyIds.MENU_ENTER);
         }
 
         void MenuEnter() 
@@ -99,8 +113,8 @@ namespace MyTasksAndNotes
             currentMenuItem = mainItem;
             var newTaskItem = new MenuItem(Up,"New Task", null); // Up
             var editTaskItem = new MenuItem(Down,"Edit last task", null); // Down
-            var newNoteItem = new MenuItem(Left,"New Note", null); // Left 
-            var editNoteItem = new MenuItem(Right,"Edit last Note", null); // Right
+            var newNoteItem = new MenuItem(Left,"New Note", addNote); // Left 
+            var editNoteItem = new MenuItem(Right,"Edit last Note", editLastNote); // Right
 
             menuItems.Add(Center, mainItem);
             addMenuRelativeItems(mainItem, newTaskItem);
@@ -109,11 +123,31 @@ namespace MyTasksAndNotes
             addMenuRelativeItems(mainItem, editNoteItem);
         }
 
+        void editLastNote() 
+        {
+            if (lastEditedNote == null) lastEditedNote = NoteContainer.Instance.getLastNote();
+            RichTextEditor.TaskViewWindow taskViewWindowController = new RichTextEditor.TaskViewWindow(lastEditedNote);
+            taskViewWindowController.Show();
+            taskViewWindowController.Activate();
+            Close();
+        }
+
         void showMainWindow() 
         {
             mainWindow.Show();
             mainWindow.WindowState = WindowState.Normal;
             mainWindow.Activate();
+            Close();
+        }
+
+        void addNote() 
+        {
+            var newNote = NoteContainer.Instance.addNewNote();
+            lastEditedNote = newNote;
+            RichTextEditor.TaskViewWindow taskViewWindowController = new RichTextEditor.TaskViewWindow(newNote);
+            taskViewWindowController.Show();
+            taskViewWindowController.Activate();
+            Close();
         }
 
 

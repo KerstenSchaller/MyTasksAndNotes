@@ -11,11 +11,7 @@
         PreviewKeyUp="Window_KeyUp">
     <Grid Name="Grid">
         <!-- Backdrop Blur -->
-        <Rectangle Fill="#AA000000">
-            <Rectangle.Effect>
-                <BlurEffect Radius="10"/>
-            </Rectangle.Effect>
-        </Rectangle>
+
 
         <!-- Grid for Radial Menu -->
         <UniformGrid Name="RadialGrid"
