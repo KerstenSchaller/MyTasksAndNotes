@@ -4,6 +4,7 @@ using System.Windows.Input;
 using System.Windows.Documents;
 using System;
 using System.ComponentModel;
+using System.Collections.Generic;
 
 namespace MyTasksAndNotes
 {
@@ -12,9 +13,10 @@ namespace MyTasksAndNotes
         private DragAdorner _dragAdorner;
         private AdornerLayer _adornerLayer;
         private Window _topWindow;
+        Dictionary<Button, Note> buttonTasksDictionary = new Dictionary<Button, Note>();
 
 
-        
+
 
         public MainWindow()
         {
@@ -33,8 +35,7 @@ namespace MyTasksAndNotes
 
             NotifyIconHandler notifyIconHandler = new NotifyIconHandler(this);
 
-            OptionsWindow optionsWindow = new OptionsWindow();
-            optionsWindow.Show();
+            
             
 
             this.Closing += MainWindow_Closing;
@@ -47,15 +48,19 @@ namespace MyTasksAndNotes
             var tasks = NoteContainer.Instance.getTasks();
             foreach (var task in tasks) 
             {
+                Button addedCard = new Button();
                 switch (task.taskState) 
                 {
+                    
                     case TaskState.Todo:
-                        AddCard(ToDoPanel, task.name);
+                        addedCard = AddCard(ToDoPanel, task.name);
                         break;
                     case TaskState.Done:
-                        AddCard(DonePanel, task.name);
+                        addedCard = AddCard(DonePanel, task.name);
                         break;
                 }
+
+                buttonTasksDictionary.Add(addedCard, task);
                 
             }
         }
@@ -83,7 +88,7 @@ namespace MyTasksAndNotes
             
         }
 
-        private void AddCard(StackPanel column, string text)
+        private Button AddCard(StackPanel column, string text)
         {
             var card = new Button
             {
@@ -103,9 +108,21 @@ namespace MyTasksAndNotes
             card.Content = textBlock;
             
             card.PreviewMouseMove += Card_PreviewMouseMove;
-
+            card.MouseDoubleClick += Card_MouseDoubleClick;
+            card.PreviewMouseLeftButtonDown += Card_PreviewMouseLeftButtonDown;
 
             column.Children.Add(card);
+            return card;
+        }
+
+        private void Card_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            
+            var card = sender as Button;
+            var task = buttonTasksDictionary[card];
+            RichTextEditor.TaskViewWindow taskViewWindow = new RichTextEditor.TaskViewWindow(task);
+            taskViewWindow.Show();
+
         }
 
         void clearCards(StackPanel column) 
@@ -126,17 +143,41 @@ namespace MyTasksAndNotes
             }
         }
 
+
+        private Point _mouseDownPosition;
+        private DateTime _lastMouseDownTime;
+        private const double DragThreshold = 5; // in pixels
+        private const int DoubleClickTimeThreshold = 300; // in milliseconds
+
+        private void Card_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            _mouseDownPosition = e.GetPosition(null);
+            _lastMouseDownTime = DateTime.Now;
+        }
         private void Card_PreviewMouseMove(object sender, MouseEventArgs e)
         {
-            if (e.LeftButton == MouseButtonState.Pressed && sender is Button btn && _dragAdorner == null)
+            if (e.LeftButton == MouseButtonState.Pressed &&
+                sender is Button btn &&
+                _dragAdorner == null)
             {
+                Point currentPosition = e.GetPosition(null);
+                Vector diff = currentPosition - _mouseDownPosition;
+
+                // Check if movement exceeds drag threshold
+                if (Math.Abs(diff.X) < DragThreshold && Math.Abs(diff.Y) < DragThreshold)
+                    return;
+
+                // Check time since last click to avoid double-click conflict
+                var elapsed = (DateTime.Now - _lastMouseDownTime).TotalMilliseconds;
+                if (elapsed < DoubleClickTimeThreshold)
+                    return;
+
                 _topWindow = Window.GetWindow(this);
                 _adornerLayer = AdornerLayer.GetAdornerLayer(RootGrid); // Make sure RootGrid is the main container
 
                 if (_adornerLayer == null)
                     return;
 
-                // Clone visual for drag preview
                 var floatCopy = new Button
                 {
                     Width = btn.ActualWidth,
@@ -149,7 +190,6 @@ namespace MyTasksAndNotes
                     Margin = new Thickness(0)
                 };
 
-                // textblock copy logic because assignment of content would change parent of content (unexpected behaviour)
                 if (btn.Content is TextBlock original)
                 {
                     floatCopy.Content = new TextBlock
@@ -171,20 +211,16 @@ namespace MyTasksAndNotes
                 }
                 else
                 {
-                    floatCopy.Content = btn.Content; // fallback
+                    floatCopy.Content = btn.Content;
                 }
 
                 _dragAdorner = new DragAdorner(RootGrid, floatCopy);
                 _adornerLayer.Add(_dragAdorner);
                 btn.Opacity = 0.5;
 
-
-                // Set initial position
                 var initialPos = e.GetPosition(RootGrid);
                 _dragAdorner.SetPosition(initialPos.X + 5, initialPos.Y + 5);
 
-
-                // Begin drag with async dispatcher to allow adorner to render first
                 Dispatcher.InvokeAsync(() =>
                 {
                     try
@@ -193,13 +229,13 @@ namespace MyTasksAndNotes
                     }
                     finally
                     {
-                        if (_dragAdorner != null )
+                        if (_dragAdorner != null)
                         {
                             _adornerLayer.Remove(_dragAdorner);
                             _dragAdorner = null;
                         }
 
-                        if (_topWindow != null )
+                        if (_topWindow != null)
                         {
                             _topWindow = null;
                         }
@@ -225,6 +261,7 @@ namespace MyTasksAndNotes
                 var parent = card.Parent as Panel;
                 parent?.Children.Remove(card);
                 panel.Children.Add(card);
+                if (panel == DonePanel) buttonTasksDictionary[card].setTaskDone();
                 card.Opacity = 1;
             }
         }

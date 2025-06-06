@@ -131,12 +131,15 @@ namespace MyTasksAndNotes
             [JsonProperty] public Dictionary<int, NoteDataItem.NoteDataItem> noteDataItems = new Dictionary<int, NoteDataItem.NoteDataItem>();
             [JsonProperty] int uid;
             [JsonProperty] public string name="";
+
             [JsonProperty] public bool isTask = false;
             [JsonProperty] public TaskState taskState = TaskState.Todo;
+            [JsonProperty] public DateTime closingTimestamp;
 
-        static uint numberOfNotes;
+            static uint numberOfNotes;
             string folderPath;
             string dataFilePath;
+
 
 
             public Note() { }
@@ -159,9 +162,21 @@ namespace MyTasksAndNotes
                     var tNote = DeserializeNote();
                     isTask = tNote.isTask;
                     name = tNote.name;
+                    taskState = tNote.taskState;
+                    closingTimestamp = tNote.closingTimestamp;
                     noteDataItems = tNote.noteDataItems;
                 }
 
+            }
+
+            public void setTaskDone() 
+            {
+                if (isTask) 
+                {
+                    taskState = TaskState.Done;
+                    closingTimestamp = DateTime.Now;
+                    SerializeNote();
+                }
             }
 
             public bool addStringItem(string item)
@@ -255,8 +270,12 @@ namespace MyTasksAndNotes
         [JsonObject(MemberSerialization.OptIn)]
         public class NoteDataItem
         {
-            //[JsonProperty] public DateTime TimeStamp { get; set; } = DateTime.Now;
-            //[JsonProperty] public string Value { get; set; }
+            [JsonProperty] public DateTime TimeStamp { get; set; } = DateTime.Now;
+
+            public NoteDataItem() 
+            {
+                TimeStamp = DateTime.Now;
+            }
         }
 
         public class Text : NoteDataItem
@@ -298,7 +317,6 @@ namespace MyTasksAndNotes
             public File(string path)
             {
                 Path = path;
-                //Path = "";
             }
         }
 

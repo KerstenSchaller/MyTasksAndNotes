@@ -36,15 +36,19 @@ public class NotifyIconHandler
 
         // Restore on click
         _notifyIcon.MouseClick += NotifyIcon_MouseClick;
+        addContextMenu();
     }
 
     private void addContextMenu() 
     {
         var contextMenu = new ContextMenuStrip();
-        contextMenu.Items.Add("Open", null, (s, e) => ShowMainWindow());
+        contextMenu.Items.Add("Options", null, (s, e) => {
+            OptionsWindow optionsWindow = new OptionsWindow();
+            optionsWindow.Show();
+            optionsWindow.Activate();
+        });
         contextMenu.Items.Add("Exit", null, (s, e) => {
-            _isExit = true;
-            mainWindow.Close();
+            App.Current.Shutdown();
         });
         _notifyIcon.ContextMenuStrip = contextMenu;
     }
@@ -56,6 +60,8 @@ public class NotifyIconHandler
             ShowMainWindow();
         }
     }
+
+
 
     private void ShowMainWindow()
     {
