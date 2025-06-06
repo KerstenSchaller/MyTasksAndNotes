@@ -41,6 +41,9 @@ namespace MyTasksAndNotes
         {
             clearCards(ToDoPanel);
             clearCards(DonePanel);
+            NotesGrid.Children.Clear();
+            buttonTasksDictionary.Clear();
+
             var tasks = NoteContainer.Instance.getTasks();
             foreach (var task in tasks) 
             {

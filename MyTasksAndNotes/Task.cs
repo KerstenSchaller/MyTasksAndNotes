@@ -134,6 +134,7 @@ namespace MyTasksAndNotes
 
             [JsonProperty] public bool isTask = false;
             [JsonProperty] public TaskState taskState = TaskState.Todo;
+            [JsonProperty] public DateTime creationTimestamp;
             [JsonProperty] public DateTime closingTimestamp;
 
             static uint numberOfNotes;
@@ -149,13 +150,16 @@ namespace MyTasksAndNotes
                 folderPath = Path.Combine(baseDirectory, _name + uid);
                 dataFilePath = Path.Combine(folderPath, "data.json");
                 isTask = _isTask;
+                creationTimestamp = DateTime.Now;
+
+                if (name == "unnamed Note") name = name + uid;
 
 
-                if (!Directory.Exists(folderPath) || !File.Exists(dataFilePath))
+                if (!Directory.Exists(folderPath) )
                 {
                     // create
                     Directory.CreateDirectory(folderPath);
-                    File.Create(dataFilePath);
+                    SerializeNote();
                 }
                 else
                 {
@@ -164,6 +168,7 @@ namespace MyTasksAndNotes
                     isTask = tNote.isTask;
                     name = tNote.name;
                     taskState = tNote.taskState;
+                    creationTimestamp = tNote.creationTimestamp;
                     closingTimestamp = tNote.closingTimestamp;
                     noteDataItems = tNote.noteDataItems;
                 }
@@ -193,8 +198,9 @@ namespace MyTasksAndNotes
                 {
                     noteDataItems.Add(noteDataItems.Count, new NoteDataItem.Text(item));
                 }
-                if (name == "unnamed Note") name = item;// set name from first text item
+                if (name == ("unnamed Note" + uid)) name = item;// set name from first text item
                 SerializeNote();
+
                 return retval;
 
 
