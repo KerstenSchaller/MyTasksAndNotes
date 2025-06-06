@@ -130,7 +130,13 @@ namespace MyTasksAndNotes
             var task = buttonTasksDictionary[card];
             RichTextEditor.TaskViewWindow taskViewWindow = new RichTextEditor.TaskViewWindow(task);
             taskViewWindow.Show();
+            taskViewWindow.Closing += TaskViewWindow_Closing;
 
+        }
+
+        private void TaskViewWindow_Closing(object? sender, CancelEventArgs e)
+        {
+            this.populate();
         }
 
         void clearCards(StackPanel column)

@@ -242,6 +242,14 @@ namespace MyTasksAndNotes
 
             public void SerializeNote()
             {
+                foreach(var p in noteDataItems)
+                {
+                    if(p.Value is NoteDataItem.Text ) 
+                    {
+                        name = ((NoteDataItem.Text)(p.Value)).TextValue;
+                        break;
+                    }
+                }
                 var settings = new JsonSerializerSettings
                 {
                     TypeNameHandling = TypeNameHandling.Auto,

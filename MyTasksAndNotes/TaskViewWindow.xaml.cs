@@ -36,6 +36,7 @@ namespace RichTextEditor
         private string typedText = "";
 
         Paragraph currentParagraph;
+        Paragraph lastParagraph;
 
         public string DelimeterLine = "######################################################\n";
 
@@ -62,6 +63,7 @@ namespace RichTextEditor
             editor.SelectionChanged += Editor_SelectionChanged;
 
             currentParagraph = GetCurrentParagraph();
+            lastParagraph = GetCurrentParagraph();
 
         }
 
@@ -71,7 +73,14 @@ namespace RichTextEditor
             var para =  GetCurrentParagraph();
             string text = new TextRange(para.ContentStart, para.ContentEnd).Text;
             if (text == "" || text.Contains("\n") || text == DelimeterLine) return;
-            taskViewWindowController.addTextToTask(text);
+            if (para.Tag != null)
+            {
+                taskViewWindowController.updateText((int)para.Tag, text);
+            }
+            else
+            {
+                taskViewWindowController.addTextToTask(text, para);
+            }
             GetCurrentParagraph().Inlines.Add(new LineBreak());
             editor.Document.Blocks.Add(new Paragraph());
             
@@ -98,18 +107,7 @@ namespace RichTextEditor
                         }
                     }
                 }
-                // redundant... image data is handled through pasting callback
-                /*
-                else if (Clipboard.ContainsImage())
-                {
-                    var bitmap = Clipboard.GetImage();
-                    if (bitmap != null)
-                    {
-                       taskViewWindowController.InsertBitmap(bitmap);
-                       e.Handled = true;
-                    }
-                }
-                */
+
             }
             suppressTextChanged = false;
         }
@@ -230,8 +228,9 @@ namespace RichTextEditor
                 currentBlock = newBlock;
 
 
-                var para = currentParagraph;
+                var para = lastParagraph;
                 string text = new TextRange(para.ContentStart, para.ContentEnd).Text;
+
                 if (text == "") return;
                 if(para.Tag != null)
                 {
@@ -239,12 +238,13 @@ namespace RichTextEditor
                 }
                 else
                 {
-                    taskViewWindowController.addTextToTask(text);
+                    taskViewWindowController.addTextToTask(text, para);
                 }
                 HighlightSelectedText(editor);
                 currentParagraph = GetCurrentParagraph();
 
             }
+            lastParagraph = GetCurrentParagraph();
         }
 
 

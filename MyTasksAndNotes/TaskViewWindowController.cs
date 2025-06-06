@@ -11,9 +11,9 @@ namespace MyTasksAndNotes
     {
 
         System.Windows.Controls.RichTextBox editor;
-        NoteContainer noteContainer;
         Note note;
         RichTextEditor.TaskViewWindow taskViewWindow;
+        int currentElementId;
 
 
         public TaskViewWindowController(System.Windows.Controls.RichTextBox _editor, RichTextEditor.TaskViewWindow _taskViewWindow, Note _note) 
@@ -55,8 +55,9 @@ namespace MyTasksAndNotes
                 addLink(text);
             }
             else
-            { 
-                addText(text);
+            {
+                addText(text, currentElementId);
+                currentElementId++;
             }
         }
 
@@ -70,9 +71,12 @@ namespace MyTasksAndNotes
             //editor.CaretPosition.InsertLineBreak();
         }
 
-        public void addTextToTask(string text) 
+        public void addTextToTask(string text, Paragraph paragraph) 
         {
             note.addStringItem(text);
+            paragraph.Tag = currentElementId;
+            currentElementId++;
+
         }
 
         public void addNewLink(string url) 
@@ -149,7 +153,8 @@ namespace MyTasksAndNotes
                 switch (item.Value)
                 {
                     case MyTasksAndNotes.NoteDataItem.Text textItem:
-                        addText(textItem.TextValue, item.Key);
+                        addText(textItem.TextValue, currentElementId);
+                        currentElementId++;
                         break;
                     case MyTasksAndNotes.NoteDataItem.Image imageItem:
                         InsertImage(imageItem.Path);
@@ -163,7 +168,7 @@ namespace MyTasksAndNotes
                     default:
                         break;
                 }
-                addText(taskViewWindow.DelimeterLine);
+                //addText(taskViewWindow.DelimeterLine);
                 editor.Document.Blocks.Add(new Paragraph());
             }
         }
