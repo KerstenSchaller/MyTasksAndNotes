@@ -5,6 +5,7 @@ using System.Windows.Documents;
 using System;
 using System.ComponentModel;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace MyTasksAndNotes
 {
@@ -22,21 +23,16 @@ namespace MyTasksAndNotes
         {
             InitializeComponent();
             this.StateChanged += MainWindow_StateChanged;
-            WindowState = WindowState.Minimized;
+            WindowState = WindowState.Minimized; // dont remove, otherwise hotkeys will brake (line causes window to be fully setUp before its hidden)
             populate();
             Show();
             Activate();
-            WindowState = WindowState.Minimized;
-            Hide();
+            this.Hide();
 
 
 
             HotkeyManager hotkeyManager = new HotkeyManager(this);
-
             NotifyIconHandler notifyIconHandler = new NotifyIconHandler(this);
-
-            
-            
 
             this.Closing += MainWindow_Closing;
         }
@@ -62,6 +58,14 @@ namespace MyTasksAndNotes
 
                 buttonTasksDictionary.Add(addedCard, task);
                 
+            }
+
+            var notes = NoteContainer.Instance.getNotes();
+            foreach (var note in notes)
+            {
+                var noteBtn = AddNote(note.name);
+                buttonTasksDictionary.Add(noteBtn, note);
+
             }
         }
 
@@ -90,6 +94,7 @@ namespace MyTasksAndNotes
 
         private Button AddCard(StackPanel column, string text)
         {
+            // create and add card
             var card = new Button
             {
                 Content = text,
@@ -117,7 +122,7 @@ namespace MyTasksAndNotes
 
         private void Card_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
-            
+            // open task in editor
             var card = sender as Button;
             var task = buttonTasksDictionary[card];
             RichTextEditor.TaskViewWindow taskViewWindow = new RichTextEditor.TaskViewWindow(task);
@@ -125,9 +130,13 @@ namespace MyTasksAndNotes
 
         }
 
-        void clearCards(StackPanel column) 
+        void clearCards(StackPanel column)
         {
-            column.Children.Clear();
+            // Remove all children starting from index 1 (keep the first one, usually the header)
+            while (column.Children.Count > 1)
+            {
+                column.Children.RemoveAt(1);
+            }
         }
 
 
@@ -144,6 +153,7 @@ namespace MyTasksAndNotes
         }
 
 
+        // extented logic to prevent dragAndDrop if actually a double click is intented
         private Point _mouseDownPosition;
         private DateTime _lastMouseDownTime;
         private const double DragThreshold = 5; // in pixels
@@ -246,13 +256,15 @@ namespace MyTasksAndNotes
 
 
 
-
+        // drag and drop 
         private void Column_DragOver(object sender, DragEventArgs e)
         {
             if (e.Data.GetDataPresent(typeof(Button)))
                 e.Effects = DragDropEffects.Move;
         }
 
+
+        // drag and drop inkl task handling
         private void Column_Drop(object sender, DragEventArgs e)
         {
             if (e.Data.GetDataPresent(typeof(Button)) && sender is StackPanel panel)
@@ -264,6 +276,53 @@ namespace MyTasksAndNotes
                 if (panel == DonePanel) buttonTasksDictionary[card].setTaskDone();
                 card.Opacity = 1;
             }
+        }
+
+        // Notes handling
+        private const int MaxItems = 100; // Set your desired max
+        private const int Columns = 3;    // Match your XAML definition
+
+        private Button AddNote(string text)
+        {
+            if (NotesGrid.Children.Count >= MaxItems)
+            {
+                throw new Exception();
+            }
+
+            int currentButtons = NotesGrid.Children.Count;
+            int row = currentButtons / Columns;
+            int col = currentButtons % Columns;
+
+            // Add new row if needed
+            if (NotesGrid.RowDefinitions.Count <= row)
+            {
+                NotesGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            }
+
+            // Create a TextBlock with wrapping for the button content
+            TextBlock wrappedText = new TextBlock
+            {
+                Text = text,
+                TextWrapping = TextWrapping.Wrap,
+                TextAlignment = TextAlignment.Center,
+                // Optional: limit width or max lines if needed
+                MaxWidth = 150 // Adjust based on your layout
+            };
+
+            // Create and add button
+            Button btn = new Button
+            {
+                Content = wrappedText,
+                Margin = new Thickness(5)
+            };
+
+            btn.MouseDoubleClick += Card_MouseDoubleClick;
+
+            Grid.SetRow(btn, row);
+            Grid.SetColumn(btn, col);
+
+            NotesGrid.Children.Add(btn);
+            return btn;
         }
     }
 }

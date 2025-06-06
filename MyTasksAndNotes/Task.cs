@@ -130,7 +130,7 @@ namespace MyTasksAndNotes
         {
             [JsonProperty] public Dictionary<int, NoteDataItem.NoteDataItem> noteDataItems = new Dictionary<int, NoteDataItem.NoteDataItem>();
             [JsonProperty] int uid;
-            [JsonProperty] public string name="";
+            [JsonProperty] public string name="unnamed Note";
 
             [JsonProperty] public bool isTask = false;
             [JsonProperty] public TaskState taskState = TaskState.Todo;
@@ -151,10 +151,11 @@ namespace MyTasksAndNotes
                 isTask = _isTask;
 
 
-                if (!Directory.Exists(folderPath))
+                if (!Directory.Exists(folderPath) || !File.Exists(dataFilePath))
                 {
                     // create
                     Directory.CreateDirectory(folderPath);
+                    File.Create(dataFilePath);
                 }
                 else
                 {
@@ -192,7 +193,7 @@ namespace MyTasksAndNotes
                 {
                     noteDataItems.Add(noteDataItems.Count, new NoteDataItem.Text(item));
                 }
-                if (name == "") name = item;// set name from first text item
+                if (name == "unnamed Note") name = item;// set name from first text item
                 SerializeNote();
                 return retval;
 
