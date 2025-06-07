@@ -12,5 +12,7 @@ namespace MyTasksAndNotes
         // public int RefreshRate { get; set; } = 60;
         // public bool EnableLogging { get; set; } = true;
         public string NoteStoragePath { get; set; } = "";
+
+        public bool HoveringMenuMainItemStationary { get; set; } = false;
     }
 }

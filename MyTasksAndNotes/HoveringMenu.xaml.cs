@@ -42,10 +42,14 @@ namespace MyTasksAndNotes
         static Note lastEditedNote = null;
         static Note lastEditedTask = null;
 
+        bool hoveringMenuMainItemStationary;
+
         public HoveringMenu(Window _mainWindow)
         {
             InitializeComponent();
             centerIndex = new Point((int)(gridSize / 2), (int)(gridSize / 2));
+
+            hoveringMenuMainItemStationary = App.GlobalOptions.HoveringMenuMainItemStationary;
 
 
             Width = SystemParameters.PrimaryScreenWidth;
@@ -260,27 +264,78 @@ namespace MyTasksAndNotes
         // Moves all elements in the grid one cell to the right (visual shift left)
         public void MoveLeft()
         {
-            ShiftCells(dx: 1, dy: 0);
+            if (hoveringMenuMainItemStationary)
+            {
+                ShiftCells(dx: 1, dy: 0);
+
+            }
+            else
+            {
+                shiftItemFocus(dx: -1, dy: 0);
+
+            }
         }
 
         // Moves all elements one cell to the left (visual shift right)
         public void MoveRight()
         {
-            ShiftCells(dx: -1, dy: 0);
+            if (hoveringMenuMainItemStationary)
+            {
+
+                ShiftCells(dx: -1, dy: 0);
+            }
+            else
+            {
+                shiftItemFocus(dx: 1, dy: 0);
+
+            }
         }
 
         // Moves all elements one cell down (visual shift up)
         public void MoveUp()
         {
-            ShiftCells(dx: 0, dy: 1);
+            if (hoveringMenuMainItemStationary)
+            {
+
+                ShiftCells(dx: 0, dy: 1);
+            }
+            else
+            {
+                shiftItemFocus(dx: 0, dy: -1);
+
+            }
         }
 
         // Moves all elements one cell up (visual shift down)
         public void MoveDown()
         {
-            ShiftCells(dx: 0, dy: -1);
+            if (hoveringMenuMainItemStationary)
+            {
+                ShiftCells(dx: 0, dy: -1);
+
+            }
+            else
+            {
+                shiftItemFocus(dx: 0, dy: 1);
+
+            }
         }
 
+
+        void shiftItemFocus(int dx, int dy)
+        {
+            Point newCenterIndex = new Point(centerIndex.X,centerIndex.Y);
+            newCenterIndex.X += dx;
+            newCenterIndex.Y += dy;
+
+            if (menuItems.ContainsKey(newCenterIndex) == false)
+            {
+                //shift not allowed, center piece does not contain a valid item
+                return;
+            }
+            centerIndex = newCenterIndex;
+            RenderGrid();
+        }
 
         Point currentShift = new Point();
         private void ShiftCells(int dx, int dy)
