@@ -44,6 +44,9 @@ namespace RichTextEditor
         public TaskViewWindow(Note _note)
         {
             InitializeComponent();
+
+            Title = _note.name;
+
             // handle pasting, just data content, files must be handeled via capturing ctrl + v
             System.Windows.DataObject.AddPastingHandler(editor, OnPasting);
 
@@ -64,6 +67,12 @@ namespace RichTextEditor
 
             currentParagraph = GetCurrentParagraph();
             lastParagraph = GetCurrentParagraph();
+
+
+
+
+
+
 
         }
 
@@ -227,7 +236,7 @@ namespace RichTextEditor
             {
                 currentBlock = newBlock;
 
-
+                if (lastParagraph == null) return;
                 var para = lastParagraph;
                 string text = new TextRange(para.ContentStart, para.ContentEnd).Text;
 

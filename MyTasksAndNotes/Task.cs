@@ -242,11 +242,13 @@ namespace MyTasksAndNotes
 
             public void SerializeNote()
             {
+                // set name from first text Item,
                 foreach(var p in noteDataItems)
                 {
                     if(p.Value is NoteDataItem.Text ) 
                     {
-                        name = ((NoteDataItem.Text)(p.Value)).TextValue;
+                        string tName = ((NoteDataItem.Text)(p.Value)).TextValue;
+                        name = tName;
                         break;
                     }
                 }

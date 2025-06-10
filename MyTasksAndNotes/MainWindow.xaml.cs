@@ -314,9 +314,10 @@ namespace MyTasksAndNotes
                 Text = text,
                 TextWrapping = TextWrapping.Wrap,
                 TextAlignment = TextAlignment.Center,
-                // Optional: limit width or max lines if needed
-                MaxWidth = 150 // Adjust based on your layout
+
             };
+            wrappedText.LineHeight = 16;
+            wrappedText.MaxHeight = wrappedText.LineHeight * App.GlobalOptions.NotePreviewMaxLines;
 
             // Create and add button
             Button btn = new Button

@@ -2,6 +2,7 @@
 
 using System.Windows.Controls;
 using System.Windows.Documents;
+using System.Windows.Forms;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
@@ -45,6 +46,7 @@ namespace MyTasksAndNotes
             {
                 InsertImage(file);
             }
+            editor.CaretPosition = editor.Document.ContentEnd;
         }
 
         public void addNewText(string text)
@@ -59,6 +61,7 @@ namespace MyTasksAndNotes
                 addText(text, currentElementId);
                 currentElementId++;
             }
+            editor.CaretPosition = editor.Document.ContentEnd;
         }
 
         private void addText(string text, int? tag = null )
@@ -67,8 +70,7 @@ namespace MyTasksAndNotes
             newParagraph.Tag = tag;
             editor.Document.Blocks.Add(newParagraph);
 
-            editor.CaretPosition = newParagraph.ContentEnd;
-            //editor.CaretPosition.InsertLineBreak();
+
         }
 
         public void addTextToTask(string text, Paragraph paragraph) 
@@ -98,8 +100,9 @@ namespace MyTasksAndNotes
                 ev.Handled = true;
             };
             editor.CaretPosition.Paragraph?.Inlines.Add(hyperlink);
-            //editor.CaretPosition = editor.CaretPosition.DocumentEnd;
-            //editor.CaretPosition.InsertLineBreak();
+
+
+            editor.CaretPosition = editor.Document.ContentEnd;
         }
 
         public void InsertNewImage(string filePath) 
@@ -170,6 +173,18 @@ namespace MyTasksAndNotes
                 }
                 //addText(taskViewWindow.DelimeterLine);
                 editor.Document.Blocks.Add(new Paragraph());
+                var emptyParagraph = new Paragraph();
+                emptyParagraph.Inlines.Add(new Run("")); // Add an empty Run to allow caret placement
+                editor.Document.Blocks.Add(emptyParagraph);
+                var pos = editor.Document.ContentEnd.GetNextInsertionPosition(LogicalDirection.Forward);
+
+                // Defer caret positioning to after layout/rendering
+                editor.Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    TextPointer caretPos = emptyParagraph.ContentStart;
+                    editor.CaretPosition = caretPos;
+                    editor.Focus();
+                }), System.Windows.Threading.DispatcherPriority.Input);
             }
         }
 

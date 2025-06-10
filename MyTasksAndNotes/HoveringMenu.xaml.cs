@@ -153,7 +153,7 @@ namespace MyTasksAndNotes
             if (lastEditedTask == null) lastEditedTask = NoteContainer.Instance.getLastTask();
             RichTextEditor.TaskViewWindow taskViewWindowController = new RichTextEditor.TaskViewWindow(lastEditedTask);
             taskViewWindowController.Show();
-            taskViewWindowController.Activate();
+            //taskViewWindowController.Activate();
             Close();
         }
 
